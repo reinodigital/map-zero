@@ -1,11 +1,13 @@
 import { PartialType } from '@nestjs/mapped-types';
 import {
+  ArrayMinSize,
   IsArray,
   IsEmail,
-  IsOptional,
+  IsEnum,
   IsString,
   MinLength,
 } from 'class-validator';
+import { SecurityRoles } from 'src/enums';
 
 export class CreateAuthDto {
   @IsString()
@@ -25,8 +27,8 @@ export class CreateAuthDto {
   mobile: string;
 
   @IsArray()
-  @IsOptional()
-  @IsString({ each: true })
+  @ArrayMinSize(1)
+  @IsEnum(SecurityRoles, { each: true }) // ✅ Validate each item in the array
   roles: string[];
 }
 

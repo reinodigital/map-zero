@@ -3,6 +3,7 @@ export enum SecurityRoles {
   ADMIN = 'ADMIN',
   ACCOUNTANT = 'ACCOUNTANT',
   SELLER = 'SELLER',
+  ADMINISTRATIVE_ASSISTANT = 'ADMINISTRATIVE_ASSISTANT',
 }
 
 export enum ListDataUser {

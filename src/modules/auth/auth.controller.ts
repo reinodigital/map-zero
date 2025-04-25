@@ -25,7 +25,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('sign-up')
-  @AuthDecorator(SecurityRoles.ADMIN)
+  @AuthDecorator(SecurityRoles.SUPER_ADMIN, SecurityRoles.ADMIN)
   create(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.create(createAuthDto);
   }

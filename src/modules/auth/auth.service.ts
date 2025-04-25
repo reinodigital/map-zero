@@ -28,19 +28,26 @@ export class AuthService {
 
   // Create a USER
   async create(createAuthDto: CreateAuthDto): Promise<IMessage> {
-    const { password, email, roles, ...restUser } = createAuthDto;
+    const { password, email, mobile, roles, ...restUser } = createAuthDto;
 
     try {
       const userWithEmail = await this.authRepository.findOneBy({ email });
-
       if (userWithEmail) {
         throw new BadRequestException(
           `Usuario con correo: ${userWithEmail.email} ya existe.`,
         );
       }
 
+      const userWithMobile = await this.authRepository.findOneBy({ mobile });
+      if (userWithMobile) {
+        throw new BadRequestException(
+          `Usuario con teléfono: ${userWithMobile.mobile} ya existe.`,
+        );
+      }
+
       const newUser = this.authRepository.create({
         email,
+        mobile,
         password: bcrypt.hashSync(password, 10),
         roles,
         ...restUser,
@@ -223,12 +230,14 @@ export class AuthService {
       throw new UnauthorizedException(err.response.message);
     }
     if (err.errno === 1062) {
-      throw new BadRequestException('Ese email ya existe, rectifique bien');
+      throw new BadRequestException(
+        'Ese correo o teléfono ya existe en otro usuario, rectifique bien.',
+      );
     }
     if (err.errno === 1052) {
       throw new BadRequestException(err.sqlMessage);
     }
-    console.log(`Customized error on Auth service: ${err}`);
+
     throw new InternalServerErrorException(
       `Error not handled yet at AuthService. Error: ${err}`,
     );

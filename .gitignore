@@ -12,6 +12,15 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# dotenv environment variable files
+.env
+.env.production
+.env.testing
+
+# Mysql Volumes
+/mysql-data/*
+!/mysql-data/.gitkeep
+
 # OS
 .DS_Store
 
@@ -34,11 +43,6 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
-# dotenv environment variable files
-.env
-.env.production
-.env.testing
 
 # temp directory
 .temp

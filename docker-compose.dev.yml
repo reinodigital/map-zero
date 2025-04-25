@@ -1,0 +1,44 @@
+version: '3.7'
+services:
+  app:
+    container_name: ${MAP_CONTAINER_NAME:-map-server}
+    build: .
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=dev
+    ports:
+      - '3000:3000'
+    command: npm run start:dev
+    volumes:
+      - ./src:/usr/src/app/src
+    depends_on: [mariadb]
+    networks:
+      mapnet:
+        aliases:
+          - map-app
+
+  mariadb:
+    image: 'mariadb:${MARIADB_VERSION:-10.11.2}'
+    container_name: ${MARIADB_CONTAINER_NAME:-map-mariadb}
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '63300:3306'
+    networks:
+      mapnet:
+        aliases:
+          - map-mariadb
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+
+networks:
+  mapnet:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: 'false'

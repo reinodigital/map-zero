@@ -19,18 +19,18 @@ import { SecurityRoles } from 'src/enums';
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
-  @AuthDecorator([SecurityRoles.ADMIN, SecurityRoles.SELLER])
+  @AuthDecorator(SecurityRoles.ADMIN, SecurityRoles.SELLER)
   @Post()
   create(@Body() createClientDto: CreateClientDto) {
     return this.clientsService.create(createClientDto);
   }
 
-  @AuthDecorator([
+  @AuthDecorator(
     SecurityRoles.SUPER_ADMIN,
     SecurityRoles.ADMIN,
     SecurityRoles.SELLER,
     SecurityRoles.ACCOUNTANT,
-  ])
+  )
   @Get()
   findAll(@Query() findAllClientsDto: FindAllClientsDto) {
     return this.clientsService.findAll(findAllClientsDto);
