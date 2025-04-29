@@ -5,6 +5,8 @@ import {
   Body,
   Query,
   InternalServerErrorException,
+  Param,
+  Patch,
 } from '@nestjs/common';
 
 import { Auth } from './entities/auth.entity';
@@ -15,7 +17,7 @@ import { AuthDecorator } from './decorators/auth.decorator';
 import { GetUser } from './decorators/get-user.decorator';
 
 import { LoginAuthDto } from './dto/login-auth.dto';
-import { CreateAuthDto } from './dto';
+import { CreateAuthDto, UpdateAuthDto } from './dto';
 
 import { SecurityRoles } from 'src/enums';
 import { FindAllUsersDto } from './dto/find-all-users.dto';
@@ -55,19 +57,25 @@ export class AuthController {
         );
   }
 
+  @Get('all-sellers')
+  @AuthDecorator()
+  findSellers() {
+    return this.authService.findSellers();
+  }
+
   @Get()
   @AuthDecorator(SecurityRoles.ADMIN, SecurityRoles.SUPER_ADMIN)
   findAll(@Query() findAllUsersDto: FindAllUsersDto) {
     return this.authService.findAll(findAllUsersDto);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.authService.findOne(+id);
-  // }
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.authService.findOne(+id);
+  }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-  //   return this.authService.update(+id, updateAuthDto);
-  // }
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
+    return this.authService.update(+id, updateAuthDto);
+  }
 }

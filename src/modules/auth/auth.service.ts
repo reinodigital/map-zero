@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { FindManyOptions, ILike, Repository } from 'typeorm';
+import { FindManyOptions, ILike, Like, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
 import { Auth } from './entities/auth.entity';
@@ -16,6 +16,7 @@ import { CreateAuthDto, LoginAuthDto, UpdateAuthDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { FindAllUsersDto } from './dto/find-all-users.dto';
 import { ICountAndAuthAll, IMessage } from 'src/interfaces/index';
+import { SecurityRoles } from 'src/enums';
 
 @Injectable()
 export class AuthService {
@@ -34,14 +35,14 @@ export class AuthService {
       const userWithEmail = await this.authRepository.findOneBy({ email });
       if (userWithEmail) {
         throw new BadRequestException(
-          `Usuario con correo: ${userWithEmail.email} ya existe.`,
+          `Empleado con correo: ${userWithEmail.email} ya existe.`,
         );
       }
 
       const userWithMobile = await this.authRepository.findOneBy({ mobile });
       if (userWithMobile) {
         throw new BadRequestException(
-          `Usuario con teléfono: ${userWithMobile.mobile} ya existe.`,
+          `Empleado con teléfono: ${userWithMobile.mobile} ya existe.`,
         );
       }
 
@@ -56,7 +57,7 @@ export class AuthService {
       await this.authRepository.save(newUser);
 
       return {
-        msg: 'Usuario creado correctamente.',
+        msg: 'Empleado creado correctamente.',
       };
     } catch (error) {
       this.handleErrorsOnDB(error);
@@ -70,11 +71,11 @@ export class AuthService {
     try {
       const user = await this.authRepository.findOneBy({ email });
       if (!user) {
-        throw new UnauthorizedException('Usuario no existe');
+        throw new UnauthorizedException('Empleado no existe');
       }
 
       if (!user.isActive) {
-        throw new UnauthorizedException('Usuario no se encuentra activo.');
+        throw new UnauthorizedException('Empleado no se encuentra activo.');
       }
 
       const { password: passwordDB, isActive, uid, ...restUser } = user;
@@ -147,8 +148,9 @@ export class AuthService {
         whereConditions.isActive = isActive;
       }
 
-      findOptions.where = whereConditions;
-      // findOptions.relations = { someRelation: { events: false } }; // in case you need to link a relation
+      if (Object.keys(whereConditions).length) {
+        findOptions.where = whereConditions;
+      }
 
       const [users, total] =
         await this.authRepository.findAndCount(findOptions);
@@ -190,7 +192,7 @@ export class AuthService {
       await this.authRepository.save(updatedUser!);
 
       return {
-        msg: 'Usuario actualizado correctamente',
+        msg: 'Empleado actualizado correctamente',
       };
     } catch (error) {
       this.handleErrorsOnDB(error);
@@ -202,15 +204,30 @@ export class AuthService {
       const user = await this.authRepository.findOneBy({ uid: id });
       if (!user) {
         throw new BadRequestException(
-          `Usuario con id: ${id} no existe en base datos.`,
+          `Empleado con id: ${id} no existe en base datos.`,
         );
       }
 
       await this.authRepository.update({ uid: id }, { isActive: false });
 
       return {
-        msg: 'Usuario es puesto inactivo exitosamente.',
+        msg: 'Empleado es puesto inactivo exitosamente.',
       };
+    } catch (error) {
+      this.handleErrorsOnDB(error);
+    }
+  }
+
+  async findSellers() {
+    try {
+      const sellers = await this.authRepository.find({
+        where: {
+          roles: Like(`%${SecurityRoles.SELLER}%`),
+        },
+        select: ['uid', 'name'],
+      });
+
+      return sellers;
     } catch (error) {
       this.handleErrorsOnDB(error);
     }
@@ -231,7 +248,7 @@ export class AuthService {
     }
     if (err.errno === 1062) {
       throw new BadRequestException(
-        'Ese correo o teléfono ya existe en otro usuario, rectifique bien.',
+        'Ese correo o teléfono ya existe en otro empleado, rectifique bien.',
       );
     }
     if (err.errno === 1052) {

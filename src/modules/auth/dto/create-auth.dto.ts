@@ -28,7 +28,7 @@ export class CreateAuthDto {
 
   @IsArray()
   @ArrayMinSize(1)
-  @IsEnum(SecurityRoles, { each: true }) // ✅ Validate each item in the array
+  @IsEnum(SecurityRoles, { each: true })
   roles: string[];
 }
 

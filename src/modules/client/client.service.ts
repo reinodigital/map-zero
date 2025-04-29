@@ -3,7 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { FindManyOptions, Repository } from 'typeorm';
+import { FindManyOptions, Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Client } from './entities/client.entity';
@@ -75,16 +75,20 @@ export class ClientsService {
 
     const whereConditions: any = {};
     if (name) {
-      whereConditions.name = name;
+      whereConditions.name = Like(`%${name}%`);
     }
     if (mobile) {
       whereConditions.mobile = mobile;
     }
     if (email) {
-      whereConditions.email = email;
+      whereConditions.email = Like(`%${email}%`);
     }
     if (identity) {
       whereConditions.identity = identity;
+    }
+
+    if (Object.keys(whereConditions).length) {
+      findOptions.where = whereConditions;
     }
 
     try {
