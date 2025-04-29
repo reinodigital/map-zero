@@ -1,5 +1,6 @@
 import { TypeCurrency, TypeIdentity } from 'src/enums';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ClientAddress } from './client-address.entity';
 
 @Entity('client')
 export class Client {
@@ -41,4 +42,9 @@ export class Client {
 
   @Column({ nullable: true, default: null })
   defaultSeller?: string;
+
+  @OneToMany(() => ClientAddress, (address) => address.client, {
+    cascade: ['insert', 'update'],
+  })
+  addresses?: ClientAddress[];
 }

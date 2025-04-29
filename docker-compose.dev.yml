@@ -12,6 +12,7 @@ services:
     command: npm run start:dev
     volumes:
       - ./src:/usr/src/app/src
+      - ./seed-data:/usr/src/app/seed-data
     depends_on: [mariadb]
     networks:
       mapnet:
