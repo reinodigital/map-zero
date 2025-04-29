@@ -104,6 +104,23 @@ export class ClientsService {
     }
   }
 
+  // endpoint
+  async findOneEndpoint(id: number): Promise<Client> {
+    try {
+      const client = await this.clientRepository.findOne({
+        where: { id },
+        relations: { addresses: true },
+      });
+      if (!client) {
+        throw new BadRequestException(`Cliente con ID: ${id} no encontrado.`);
+      }
+
+      return client;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
   async findOne(id: number): Promise<Client> {
     try {
       const client = await this.clientRepository.findOneBy({ id });

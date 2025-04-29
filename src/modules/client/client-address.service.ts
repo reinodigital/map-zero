@@ -71,6 +71,35 @@ export class ClientAddressService {
     }
   }
 
+  async findOne(id: number): Promise<ClientAddress> {
+    try {
+      const clientAddress = await this.clientAddressRepository.findOneBy({
+        id,
+      });
+      if (!clientAddress) {
+        throw new BadRequestException(
+          `Dirección de cliente con ID: ${id} no encontrada.`,
+        );
+      }
+
+      return clientAddress;
+    } catch (error) {
+      this.handleErrorsOnDB(error);
+    }
+  }
+
+  async remove(id: number): Promise<IMessage> {
+    try {
+      const clientAddress = await this.findOne(id);
+
+      await this.clientAddressRepository.remove(clientAddress);
+
+      return { msg: 'Dirección de cliente removida correctamente.' };
+    } catch (error) {
+      this.handleErrorsOnDB(error);
+    }
+  }
+
   private handleErrorsOnDB(err: any): never {
     if (err.status === 400) {
       throw new BadRequestException(err.response.message);

@@ -38,7 +38,7 @@ export class ClientsController {
   @AuthDecorator()
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.clientsService.findOne(+id);
+    return this.clientsService.findOneEndpoint(+id);
   }
 
   @AuthDecorator(

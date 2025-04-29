@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Delete } from '@nestjs/common';
 
 import { AuthDecorator } from '../auth/decorators';
 import { ClientAddressService } from './client-address.service';
@@ -26,5 +26,10 @@ export class ClientAddressController {
   @Get('/:clientId')
   findAll(@Param('clientId') clientId: string) {
     return this.clientAddressService.findAllByClientID(+clientId);
+  }
+
+  @Delete('/:addressId')
+  removeOne(@Param('addressId') addressId: string) {
+    return this.clientAddressService.remove(+addressId);
   }
 }
