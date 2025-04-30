@@ -8,23 +8,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Client } from './entities/client.entity';
-import { ClientAddress } from './entities/client-address.entity';
+import { ClientContact } from './entities/client-contact.entity';
 
 import { IMessage } from 'src/interfaces';
-import { CreateClientAddressDto } from './dto/create-client-address.dto';
+import { CreateClientContactDto } from './dto/create-client-contact.dto';
 
 @Injectable()
-export class ClientAddressService {
+export class ClientContactService {
   constructor(
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
-    @InjectRepository(ClientAddress)
-    private readonly clientAddressRepository: Repository<ClientAddress>,
+    @InjectRepository(ClientContact)
+    private readonly clientContactRepository: Repository<ClientContact>,
   ) {}
 
-  async createNewOne(
+  async create(
     clientId: number,
-    createClientAddressDto: CreateClientAddressDto,
+    createClientContactDto: CreateClientContactDto,
   ): Promise<IMessage> {
     try {
       const client = await this.clientRepository.findOneBy({ id: clientId });
@@ -34,55 +34,55 @@ export class ClientAddressService {
         );
       }
 
-      const [addresses, count] =
-        await this.clientAddressRepository.findAndCountBy({
+      const [contacts, count] =
+        await this.clientContactRepository.findAndCountBy({
           client: { id: clientId },
         });
 
       if (count > 2) {
         throw new BadRequestException(
-          'Ya el cliente cuenta con 3 direcciones. Si desea agregar una nueva debe eliminar al menos una antigua.',
+          'Ya el cliente cuenta con 3 contactos. Si desea agregar uno nueva debe eliminar al menos uno antiguo.',
         );
       }
 
-      const newAddress = this.clientAddressRepository.create({
-        ...createClientAddressDto,
+      const newContact = this.clientContactRepository.create({
+        ...createClientContactDto,
         client,
       });
 
-      await this.clientAddressRepository.save(newAddress);
+      await this.clientContactRepository.save(newContact);
 
-      return { msg: 'Dirección de cliente agregada correctamente.' };
+      return { msg: 'Contacto de cliente agregado correctamente.' };
     } catch (error) {
       this.handleErrorsOnDB(error);
     }
   }
 
   // PUBLIC ENDPOINT
-  // async findAllByClientID(clientId: number): Promise<ClientAddress[]> {
+  // async findAllByClientID(clientId: number): Promise<ClientContact[]> {
   //   try {
-  //     const addresses = await this.clientAddressRepository.find({
+  //     const contacts = await this.clientContactRepository.find({
   //       where: { client: { id: clientId } },
   //     });
 
-  //     return addresses ?? [];
+  //     return contacts ?? [];
   //   } catch (error) {
   //     this.handleErrorsOnDB(error);
   //   }
   // }
 
-  async findOne(id: number): Promise<ClientAddress> {
+  async findOne(id: number): Promise<ClientContact> {
     try {
-      const clientAddress = await this.clientAddressRepository.findOneBy({
+      const clientContact = await this.clientContactRepository.findOneBy({
         id,
       });
-      if (!clientAddress) {
+      if (!clientContact) {
         throw new BadRequestException(
-          `Dirección de cliente con ID: ${id} no encontrada.`,
+          `Contacto de cliente con ID: ${id} no encontrada.`,
         );
       }
 
-      return clientAddress;
+      return clientContact;
     } catch (error) {
       this.handleErrorsOnDB(error);
     }
@@ -90,11 +90,11 @@ export class ClientAddressService {
 
   async remove(id: number): Promise<IMessage> {
     try {
-      const clientAddress = await this.findOne(id);
+      const clientContact = await this.findOne(id);
 
-      await this.clientAddressRepository.remove(clientAddress);
+      await this.clientContactRepository.remove(clientContact);
 
-      return { msg: 'Dirección de cliente removida correctamente.' };
+      return { msg: 'Contacto de cliente removido correctamente.' };
     } catch (error) {
       this.handleErrorsOnDB(error);
     }
@@ -114,7 +114,7 @@ export class ClientAddressService {
     }
 
     throw new InternalServerErrorException(
-      `Error not handled yet at Client-Address Service: ${err}`,
+      `Error not handled yet at Client-Contact Service: ${err}`,
     );
   }
 }

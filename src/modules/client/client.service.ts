@@ -109,7 +109,7 @@ export class ClientsService {
     try {
       const client = await this.clientRepository.findOne({
         where: { id },
-        relations: { addresses: true },
+        relations: { addresses: true, contacts: true },
       });
       if (!client) {
         throw new BadRequestException(`Cliente con ID: ${id} no encontrado.`);

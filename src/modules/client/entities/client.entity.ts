@@ -1,6 +1,7 @@
 import { TypeCurrency, TypeIdentity } from 'src/enums';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ClientAddress } from './client-address.entity';
+import { ClientContact } from './client-contact.entity';
 
 @Entity('client')
 export class Client {
@@ -47,4 +48,9 @@ export class Client {
     cascade: ['insert', 'update'],
   })
   addresses?: ClientAddress[];
+
+  @OneToMany(() => ClientContact, (contact) => contact.client, {
+    cascade: ['insert', 'update'],
+  })
+  contacts?: ClientContact[];
 }
