@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Item } from 'src/modules/item/entities/item.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('cabys_list')
 export class CabysList {
@@ -14,6 +15,6 @@ export class CabysList {
   @Column({ nullable: false })
   tax: number; // percentage IVA
 
-  // @OneToMany(() => Product, (product) => product.cabys)
-  // products: Product[];
+  @OneToMany(() => Item, (item) => item.cabys)
+  items: Item[];
 }

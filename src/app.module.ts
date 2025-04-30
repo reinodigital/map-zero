@@ -9,6 +9,7 @@ import { ConfigDB } from './db/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { CabysModule } from './modules/cabys/cabys.module';
 import { ClientsModule } from './modules/client/client.module';
+import { ItemModule } from './modules/item/item.module';
 import { SeedModule } from './modules/seed/seed.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { TerritoryModule } from './modules/territory/territory.module';
@@ -37,8 +38,9 @@ import { TerritoryModule } from './modules/territory/territory.module';
     AuthModule,
     CabysModule,
     ClientsModule,
-    SharedModule,
+    ItemModule,
     SeedModule,
+    SharedModule,
     TerritoryModule,
   ],
   controllers: [],
