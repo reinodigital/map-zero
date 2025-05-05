@@ -1,9 +1,11 @@
 import { Controller, Post, Body, Param, Delete } from '@nestjs/common';
 
-import { AuthDecorator } from '../auth/decorators';
+import { AuthDecorator, GetUser } from '../auth/decorators';
 import { ClientAddressService } from './client-address.service';
 
 import { CreateClientAddressDto } from './dto/create-client-address.dto';
+import { RemoveClientContactAddressDto } from './dto/remove-client-contact-address.dto';
+import { ListDataUser } from 'src/enums';
 
 @Controller('client-address')
 export class ClientAddressController {
@@ -15,10 +17,12 @@ export class ClientAddressController {
   createAddress(
     @Param('clientId') clientId: string,
     @Body() createClientAddressDto: CreateClientAddressDto,
+    @GetUser(ListDataUser.name) userName: string, // decorator
   ) {
     return this.clientAddressService.createNewOne(
       +clientId,
       createClientAddressDto,
+      userName,
     );
   }
 
@@ -29,7 +33,16 @@ export class ClientAddressController {
   // }
 
   @Delete('/:addressId')
-  removeOne(@Param('addressId') addressId: string) {
-    return this.clientAddressService.remove(+addressId);
+  @AuthDecorator()
+  removeOne(
+    @Param('addressId') addressId: string,
+    @Body() removeClientContactAddressDto: RemoveClientContactAddressDto,
+    @GetUser(ListDataUser.name) userName: string, // decorator
+  ) {
+    return this.clientAddressService.remove(
+      +addressId,
+      removeClientContactAddressDto,
+      userName,
+    );
   }
 }

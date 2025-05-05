@@ -7,20 +7,29 @@ import { FindManyOptions, Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Client } from './entities/client.entity';
+import { TrackingService } from '../tracking/tracking.service';
+import { formatDateAsReadable } from '../shared/helpers/format-date-as-readable.helper';
 
 import { CreateClientDto, UpdateClientDto } from './dto/create-client.dto';
-import { ICountAndClientAll, IMessage } from 'src/interfaces';
 import { FindAllClientsDto } from './dto/find-all-clients.dto';
+import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
+import { ICountAndClientAll, IDetailClient, IMessage } from 'src/interfaces';
+import { ActionOverEntity, NameEntities } from 'src/enums';
 
 @Injectable()
 export class ClientsService {
   constructor(
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
+
+    private readonly trackingService: TrackingService,
   ) {}
 
-  async create(createClientDto: CreateClientDto): Promise<IMessage> {
-    const { name, email, ...restClient } = createClientDto;
+  async create(
+    createClientDto: CreateClientDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const { name, email, createdAt, ...restClient } = createClientDto;
 
     try {
       const existsClientWithName = await this.clientRepository.findOneBy({
@@ -42,10 +51,20 @@ export class ClientsService {
       const newClient = this.clientRepository.create({
         name,
         email,
+        createdAt,
         ...restClient,
       });
 
-      await this.clientRepository.save(newClient);
+      const clientSaved = await this.clientRepository.save(newClient);
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.CREATED,
+        createdAt,
+        clientSaved,
+      );
+      await this.trackingService.create(itemTrackingDto);
 
       return { msg: 'Nuevo cliente agregado correctamente.' };
     } catch (error) {
@@ -105,7 +124,7 @@ export class ClientsService {
   }
 
   // endpoint
-  async findOneEndpoint(id: number): Promise<Client> {
+  async findOneEndpoint(id: number): Promise<IDetailClient> {
     try {
       const client = await this.clientRepository.findOne({
         where: { id },
@@ -115,7 +134,16 @@ export class ClientsService {
         throw new BadRequestException(`Cliente con ID: ${id} no encontrado.`);
       }
 
-      return client;
+      // fetch trackings
+      const result: IDetailClient = {
+        ...client,
+        tracking: await this.trackingService.fetchTrackings(
+          NameEntities.CLIENT,
+          id,
+        ),
+      };
+
+      return result;
     } catch (error) {
       this.handleErrorOnDB(error);
     }
@@ -137,8 +165,9 @@ export class ClientsService {
   async update(
     id: number,
     updateClientDto: UpdateClientDto,
+    userName: string,
   ): Promise<IMessage> {
-    const { name, email, isActive, ...restClient } = updateClientDto;
+    const { name, email, isActive, updatedAt, ...restClient } = updateClientDto;
 
     try {
       const oldClient = await this.findOne(id);
@@ -178,7 +207,16 @@ export class ClientsService {
         ...restClient,
       });
 
-      await this.clientRepository.save(updatedClient!);
+      const clientUpdated = await this.clientRepository.save(updatedClient!);
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.EDITED,
+        updatedAt,
+        clientUpdated,
+      );
+      await this.trackingService.create(itemTrackingDto);
 
       return { msg: 'Cliente actualizado correctamente.' };
     } catch (error) {
@@ -186,7 +224,7 @@ export class ClientsService {
     }
   }
 
-  async remove(id: number): Promise<IMessage> {
+  async remove(id: number, userName: string): Promise<IMessage> {
     try {
       await this.findOne(id);
 
@@ -196,6 +234,24 @@ export class ClientsService {
     } catch (error) {
       this.handleErrorOnDB(error);
     }
+  }
+
+  private generateTracking(
+    userName: string,
+    action: ActionOverEntity,
+    date: string,
+    client: Client,
+  ): CreateTrackingDto {
+    const newTracking: CreateTrackingDto = {
+      action,
+      executedAt: date,
+      executedBy: userName,
+      detail: `Cliente ${client.name} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      refEntity: NameEntities.CLIENT,
+      refEntityId: client.id,
+    };
+
+    return newTracking;
   }
 
   private handleErrorOnDB(err: any): never {

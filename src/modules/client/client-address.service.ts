@@ -10,8 +10,14 @@ import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 import { ClientAddress } from './entities/client-address.entity';
 
+import { TrackingService } from '../tracking/tracking.service';
+
 import { IMessage } from 'src/interfaces';
 import { CreateClientAddressDto } from './dto/create-client-address.dto';
+import { ActionOverEntity, NameEntities } from 'src/enums';
+import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
+import { formatDateAsReadable } from '../shared/helpers/format-date-as-readable.helper';
+import { RemoveClientContactAddressDto } from './dto/remove-client-contact-address.dto';
 
 @Injectable()
 export class ClientAddressService {
@@ -20,12 +26,16 @@ export class ClientAddressService {
     private readonly clientRepository: Repository<Client>,
     @InjectRepository(ClientAddress)
     private readonly clientAddressRepository: Repository<ClientAddress>,
+
+    private readonly trackingService: TrackingService,
   ) {}
 
   async createNewOne(
     clientId: number,
     createClientAddressDto: CreateClientAddressDto,
+    userName: string,
   ): Promise<IMessage> {
+    const { createdAt, ...restCreateAddress } = createClientAddressDto;
     try {
       const client = await this.clientRepository.findOneBy({ id: clientId });
       if (!client) {
@@ -46,11 +56,21 @@ export class ClientAddressService {
       }
 
       const newAddress = this.clientAddressRepository.create({
-        ...createClientAddressDto,
+        ...restCreateAddress,
         client,
       });
 
-      await this.clientAddressRepository.save(newAddress);
+      const addressSaved = await this.clientAddressRepository.save(newAddress);
+
+      // generate tracking
+      const trackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.ADDED,
+        createdAt,
+        client,
+        `${addressSaved.provinceName}, ${addressSaved.cantonName}, ${addressSaved.districtName} ...`,
+      );
+      await this.trackingService.create(trackingDto);
 
       return { msg: 'Dirección de cliente agregada correctamente.' };
     } catch (error) {
@@ -73,8 +93,9 @@ export class ClientAddressService {
 
   async findOne(id: number): Promise<ClientAddress> {
     try {
-      const clientAddress = await this.clientAddressRepository.findOneBy({
-        id,
+      const clientAddress = await this.clientAddressRepository.findOne({
+        where: { id },
+        relations: { client: true },
       });
       if (!clientAddress) {
         throw new BadRequestException(
@@ -88,16 +109,50 @@ export class ClientAddressService {
     }
   }
 
-  async remove(id: number): Promise<IMessage> {
+  async remove(
+    id: number,
+    removeClientContactAddressDto: RemoveClientContactAddressDto,
+    userName: string,
+  ): Promise<IMessage> {
     try {
       const clientAddress = await this.findOne(id);
+      const client = clientAddress.client;
 
       await this.clientAddressRepository.remove(clientAddress);
+
+      // generate tracking
+      const trackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.REMOVED,
+        removeClientContactAddressDto.removedAt,
+        client,
+        `${clientAddress.provinceName}, ${clientAddress.cantonName}, ${clientAddress.districtName} ...`,
+      );
+      await this.trackingService.create(trackingDto);
 
       return { msg: 'Dirección de cliente removida correctamente.' };
     } catch (error) {
       this.handleErrorsOnDB(error);
     }
+  }
+
+  private generateTracking(
+    userName: string,
+    action: ActionOverEntity,
+    date: string,
+    client: Client,
+    shortAddress: string,
+  ): CreateTrackingDto {
+    const newTracking: CreateTrackingDto = {
+      action,
+      executedAt: date,
+      executedBy: userName,
+      detail: `Dirección ${shortAddress} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      refEntity: NameEntities.CLIENT,
+      refEntityId: client.id,
+    };
+
+    return newTracking;
   }
 
   private handleErrorsOnDB(err: any): never {

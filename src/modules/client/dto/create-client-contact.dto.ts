@@ -7,6 +7,10 @@ import {
 } from 'class-validator';
 
 export class CreateClientContactDto {
+  @IsNotEmpty()
+  @IsString()
+  createdAt: string;
+
   @IsString()
   @IsNotEmpty()
   @MinLength(2)

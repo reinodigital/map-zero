@@ -5,4 +5,5 @@ export enum ActionOverEntity {
   SENT = 'enviado',
   RECEIVED = 'recibido',
   VIEWED = 'visto',
+  ADDED = 'agregado',
 }

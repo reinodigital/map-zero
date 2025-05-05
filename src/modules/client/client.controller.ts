@@ -8,12 +8,12 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { AuthDecorator } from 'src/modules/auth/decorators';
+import { AuthDecorator, GetUser } from 'src/modules/auth/decorators';
 import { ClientsService } from './client.service';
 
 import { CreateClientDto, UpdateClientDto } from './dto/create-client.dto';
 import { FindAllClientsDto } from './dto/find-all-clients.dto';
-import { SecurityRoles } from 'src/enums';
+import { ListDataUser, SecurityRoles } from 'src/enums';
 
 @Controller('client')
 export class ClientsController {
@@ -25,8 +25,11 @@ export class ClientsController {
     SecurityRoles.SELLER,
   )
   @Post()
-  create(@Body() createClientDto: CreateClientDto) {
-    return this.clientsService.create(createClientDto);
+  create(
+    @Body() createClientDto: CreateClientDto,
+    @GetUser(ListDataUser.name) userName: string, // decorator
+  ) {
+    return this.clientsService.create(createClientDto, userName);
   }
 
   @AuthDecorator()
@@ -47,13 +50,20 @@ export class ClientsController {
     SecurityRoles.SELLER,
   )
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClientDto: UpdateClientDto) {
-    return this.clientsService.update(+id, updateClientDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateClientDto: UpdateClientDto,
+    @GetUser(ListDataUser.name) userName: string, // decorator
+  ) {
+    return this.clientsService.update(+id, updateClientDto, userName);
   }
 
   @AuthDecorator(SecurityRoles.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.clientsService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @GetUser(ListDataUser.name) userName: string, // decorator
+  ) {
+    return this.clientsService.remove(+id, userName);
   }
 }

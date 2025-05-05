@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 
+import { TrackingModule } from '../tracking/tracking.module';
+
 import { Auth } from './entities/auth.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -34,7 +36,14 @@ import { JwtStrategy } from './strategy/jwt.strategy';
     }),
 
     TypeOrmModule.forFeature([Auth]),
+    TrackingModule,
   ],
-  exports: [TypeOrmModule, PassportModule, JwtModule, JwtStrategy],
+  exports: [
+    TypeOrmModule,
+    PassportModule,
+    JwtModule,
+    JwtStrategy,
+    TrackingModule,
+  ],
 })
 export class AuthModule {}

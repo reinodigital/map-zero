@@ -3,6 +3,10 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class CreateClientAddressDto {
   @IsString()
   @IsNotEmpty()
+  createdAt: string;
+
+  @IsString()
+  @IsNotEmpty()
   provinceName: string;
 
   @IsString()

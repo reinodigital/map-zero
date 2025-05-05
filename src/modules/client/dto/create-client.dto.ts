@@ -58,4 +58,8 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
   @IsOptional()
   @IsIn(['active', 'inactive'])
   isActive?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  updatedAt: string;
 }
