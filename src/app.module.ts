@@ -10,9 +10,11 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CabysModule } from './modules/cabys/cabys.module';
 import { ClientsModule } from './modules/client/client.module';
 import { ItemModule } from './modules/item/item.module';
+import { QuoteModule } from './modules/quote/quote.module';
 import { SeedModule } from './modules/seed/seed.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { TerritoryModule } from './modules/territory/territory.module';
+import { TrackingModule } from './modules/tracking/tracking.module';
 
 @Module({
   imports: [
@@ -39,9 +41,11 @@ import { TerritoryModule } from './modules/territory/territory.module';
     CabysModule,
     ClientsModule,
     ItemModule,
+    QuoteModule,
     SeedModule,
     SharedModule,
     TerritoryModule,
+    TrackingModule,
   ],
   controllers: [],
   providers: [],

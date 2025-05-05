@@ -7,25 +7,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Like, Repository } from 'typeorm';
 
 import { Item } from './entities/item.entity';
-import { ItemHistory } from './entities/item_history.entity';
 import { CabysList } from '../cabys/entities/cabys-list.entity';
 
 import { CabysService } from '../cabys/cabys.service';
+import { TrackingService } from '../tracking/tracking.service';
 
-import { ICountAndItemAll, IMessage } from 'src/interfaces';
-import { ActionOverEntity } from 'src/enums';
+import { ICountAndItemAll, IDetailItem, IMessage } from 'src/interfaces';
+import { ActionOverEntity, NameEntities } from 'src/enums';
 import { CreateItemDto, UpdateItemDto } from './dto/create-item.dto';
 import { FindAllItemsDto } from './dto/find-all-items.dto';
+import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
+import { formatDateAsReadable } from '../shared/helpers/format-date-as-readable.helper';
 
 @Injectable()
 export class ItemService {
   constructor(
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
-    @InjectRepository(ItemHistory)
-    private readonly itemHistoryRepository: Repository<ItemHistory>,
 
     private cabysService: CabysService,
+    private trackingService: TrackingService,
   ) {}
 
   async create(
@@ -45,23 +46,24 @@ export class ItemService {
       // verify and get cabys
       const cabysEntity = await this.getCabysEntity(cabys);
 
-      // generate item - history
-      const itemHistoryByCreation = this.generateItemHistory(
-        userName,
-        ActionOverEntity.CREATED,
-        createdAt,
-      );
-
       // create and save new item
       const newItem = this.itemRepository.create({
         name,
         createdAt,
         cabys: cabysEntity,
-        itemHistory: [itemHistoryByCreation],
         ...restItem,
       });
 
-      await this.itemRepository.save(newItem);
+      const savedItem = await this.itemRepository.save(newItem);
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.CREATED,
+        createdAt,
+        savedItem,
+      );
+      await this.trackingService.create(itemTrackingDto);
 
       return { msg: 'Item agregado correctamente.' };
     } catch (error) {
@@ -102,18 +104,27 @@ export class ItemService {
     }
   }
 
-  async findOne(id: number): Promise<Item> {
+  async findOne(id: number): Promise<IDetailItem> {
     try {
       const item = await this.itemRepository.findOne({
         where: { id },
-        relations: { cabys: true, itemHistory: true },
+        relations: { cabys: true },
       });
 
       if (!item) {
         throw new BadRequestException(`Item con ID: ${id} no encontrado.`);
       }
 
-      return item;
+      // fetch trackings
+      const result: IDetailItem = {
+        ...item,
+        tracking: await this.trackingService.fetchTrackings(
+          NameEntities.ITEM,
+          id,
+        ),
+      };
+
+      return result;
     } catch (error) {
       this.handleErrorOnDB(error);
     }
@@ -152,16 +163,14 @@ export class ItemService {
 
       const updatedItem = await this.itemRepository.save(preloadedItem!);
 
-      // generate item - history
-      const itemHistoryByEdition = this.generateItemHistory(
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
         userName,
         ActionOverEntity.EDITED,
         updatedAt,
+        updatedItem,
       );
-
-      itemHistoryByEdition.item = updatedItem;
-
-      await this.itemHistoryRepository.save(itemHistoryByEdition);
+      await this.trackingService.create(itemTrackingDto);
 
       return {
         msg: `Item con nombre codigo: ${name} actualizado correctamente.`,
@@ -184,20 +193,24 @@ export class ItemService {
     }
   }
 
-  private generateItemHistory(
+  private generateTracking(
     userName: string,
     action: ActionOverEntity,
     date: string,
-  ): ItemHistory {
-    const newItemHistory = this.itemHistoryRepository.create({
+    item: Item,
+  ): CreateTrackingDto {
+    const newItemHistory: CreateTrackingDto = {
       action,
       executedAt: date,
       executedBy: userName,
-      description: `Item ${action} el ${date} por ${userName}`,
-    });
+      detail: `Item ${item.name} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      refEntity: NameEntities.ITEM,
+      refEntityId: item.id,
+    };
 
     return newItemHistory;
   }
+
   private handleErrorOnDB(err: any): never {
     if (err.response?.statusCode === 400) {
       throw new BadRequestException(err.response.message);

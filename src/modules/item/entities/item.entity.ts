@@ -6,7 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ItemHistory } from './item_history.entity';
+import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 
 @Entity('item')
 export class Item {
@@ -57,8 +57,6 @@ export class Item {
   })
   createdAt: Date;
 
-  @OneToMany(() => ItemHistory, (itemHistory) => itemHistory.item, {
-    cascade: ['insert'],
-  })
-  itemHistory: ItemHistory[];
+  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.item)
+  quoteItems: QuoteItem[];
 }

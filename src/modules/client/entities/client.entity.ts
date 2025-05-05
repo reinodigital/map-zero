@@ -1,7 +1,9 @@
 import { TypeCurrency, TypeIdentity } from 'src/enums';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
 import { ClientAddress } from './client-address.entity';
 import { ClientContact } from './client-contact.entity';
+import { Quote } from 'src/modules/quote/entities/quote.entity';
 
 @Entity('client')
 export class Client {
@@ -53,4 +55,7 @@ export class Client {
     cascade: ['insert', 'update'],
   })
   contacts?: ClientContact[];
+
+  @OneToMany(() => Quote, (quote) => quote.client)
+  quotes?: Quote[];
 }
