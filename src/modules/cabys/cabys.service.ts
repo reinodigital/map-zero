@@ -4,9 +4,16 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryRunner, Repository } from 'typeorm';
+import { Like, QueryRunner, Repository } from 'typeorm';
 
 import { CabysList } from './entities/cabys-list.entity';
+
+import { SimplePaginationDto } from '../shared/dto/simple_pagination.dto';
+import {
+  CabysSuggestion,
+  CabysSuggestionResponse,
+  Constants,
+} from 'src/interfaces';
 
 @Injectable()
 export class CabysService {
@@ -16,16 +23,65 @@ export class CabysService {
   ) {}
 
   async findOneCabys(code: string): Promise<CabysList> {
-    const cabys = await this.cabysListRepository.findOneBy({ code });
+    try {
+      const cabys = await this.cabysListRepository.findOneBy({ code });
 
-    if (!cabys) {
-      throw new BadRequestException(`Cabys ${cabys} no existe en sistema.`);
+      if (!cabys) {
+        throw new BadRequestException(`Cabys ${cabys} no existe en sistema.`);
+      }
+
+      return cabys;
+    } catch (error) {
+      this.handleErrorOnDB(error);
     }
-
-    return cabys;
   }
 
-  // This code is executed only one time
+  async getCabysSuggestions(
+    term: string,
+    simplePaginationDto: SimplePaginationDto,
+  ): Promise<CabysSuggestionResponse> {
+    const { limit = 12, offset = 0 } = simplePaginationDto;
+    try {
+      const suggestions: CabysSuggestion[] = [];
+      const [cabysList, total] = await this.cabysListRepository.findAndCount({
+        where: [
+          { code: Like(`%${term.trim()}%`) },
+          { description: Like(`%${term.trim()}%`) },
+        ],
+        take: limit,
+        skip: offset,
+        order: {
+          code: 'desc',
+        },
+      });
+
+      if (!cabysList.length) {
+        suggestions.push({
+          code: null,
+          description: Constants.NOT_RESULTS,
+          tax: null,
+        });
+      } else {
+        for (const cabys of cabysList) {
+          suggestions.push({
+            code: cabys.code,
+            description: cabys.description,
+            tax: cabys.tax,
+          });
+        }
+      }
+
+      return {
+        count: total,
+        isValid: cabysList.length ? true : false,
+        suggestions,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  // ======= This code is executed only one time ========
   public async createListOfCabys(data: any[]): Promise<void> {
     const connection = this.cabysListRepository.manager.connection;
     const queryRunner: QueryRunner = connection.createQueryRunner();
@@ -73,5 +129,19 @@ export class CabysService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private handleErrorOnDB(err: any): never {
+    if (err.response?.statusCode === 400) {
+      throw new BadRequestException(err.response.message);
+    }
+
+    const { errno, sqlMessage } = err;
+    if (errno === 1062 || errno === 1364)
+      throw new BadRequestException(sqlMessage);
+
+    throw new InternalServerErrorException(
+      `Error not handled yet at CabysService. Error: ${err}`,
+    );
   }
 }

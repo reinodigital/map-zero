@@ -1,5 +1,13 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
+import { TaxRateCode } from 'src/enums';
 
 export class CreateItemDto {
   @IsString()
@@ -14,7 +22,7 @@ export class CreateItemDto {
   @IsNotEmpty()
   cabys: string;
 
-  @IsString()
+  @IsNumber()
   @IsPositive()
   costPrice: number;
 
@@ -24,13 +32,16 @@ export class CreateItemDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsEnum(TaxRateCode, {
+    message: `Valor de tasa de impuestos permitidos solo estos: [${Object.values(TaxRateCode)}]`,
+  })
   purchaseTaxRate: string;
 
   @IsString()
   @IsOptional()
-  purchaseDescription: string;
+  purchaseDescription?: string;
 
-  @IsString()
+  @IsNumber()
   @IsPositive()
   salePrice: number;
 
@@ -40,11 +51,14 @@ export class CreateItemDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsEnum(TaxRateCode, {
+    message: `Valor de tasa de impuestos permitidos solo estos: ${Object.values(TaxRateCode).join(', ')}`,
+  })
   saleTaxRate: string;
 
   @IsString()
   @IsOptional()
-  saleDescription: string;
+  saleDescription?: string;
 }
 
 export class UpdateItemDto extends PartialType(CreateItemDto) {
