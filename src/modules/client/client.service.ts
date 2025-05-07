@@ -72,6 +72,19 @@ export class ClientsService {
     }
   }
 
+  async findAllShort() {
+    try {
+      const clients = await this.clientRepository.find({
+        select: ['id', 'name'],
+        order: { name: { direction: 'DESC' } },
+      });
+
+      return clients;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
   async findAll(
     findAllClientsDto: FindAllClientsDto,
   ): Promise<ICountAndClientAll> {

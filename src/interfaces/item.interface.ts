@@ -1,3 +1,4 @@
+import { CabysList } from 'src/modules/cabys/entities/cabys-list.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
 import { Tracking } from 'src/modules/tracking/entities/tracking.entity';
 
@@ -8,4 +9,14 @@ export interface ICountAndItemAll {
 
 export interface IDetailItem extends Item {
   tracking: Tracking[];
+}
+
+export interface IItemForSelect {
+  id: number;
+  name: string;
+  cabys: CabysList;
+  salePrice: number;
+  saleAccount: string;
+  saleTaxRate: string;
+  saleDescription?: string;
 }

@@ -33,6 +33,12 @@ export class ClientsController {
   }
 
   @AuthDecorator()
+  @Get('all-short')
+  fetchAllShort() {
+    return this.clientsService.findAllShort();
+  }
+
+  @AuthDecorator()
   @Get()
   findAll(@Query() findAllClientsDto: FindAllClientsDto) {
     return this.clientsService.findAll(findAllClientsDto);

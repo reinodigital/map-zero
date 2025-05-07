@@ -7,8 +7,8 @@ export class Migration1746477647447 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE \`quote\` (
       \`id\` int NOT NULL AUTO_INCREMENT,
-      \`status\` varchar(32) NOT NULL DEFAULT 'draft',
-      \`quoteNumber\` varchar(32) NOT NULL,
+      \`status\` varchar(32) NOT NULL DEFAULT 'borrador',
+      \`quoteNumber\` varchar(32) NOT NULL DEFAULT 'QU-',
       \`initDate\` timestamp NULL,
       \`expireDate\` timestamp NULL,
       \`currency\` varchar(16) NOT NULL,

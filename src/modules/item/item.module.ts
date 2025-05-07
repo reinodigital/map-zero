@@ -12,5 +12,6 @@ import { ItemService } from './item.service';
   imports: [TypeOrmModule.forFeature([Item]), AuthModule, CabysModule],
   controllers: [ItemController],
   providers: [ItemService],
+  exports: [TypeOrmModule],
 })
 export class ItemModule {}

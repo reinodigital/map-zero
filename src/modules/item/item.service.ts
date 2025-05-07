@@ -12,7 +12,12 @@ import { CabysList } from '../cabys/entities/cabys-list.entity';
 import { CabysService } from '../cabys/cabys.service';
 import { TrackingService } from '../tracking/tracking.service';
 
-import { ICountAndItemAll, IDetailItem, IMessage } from 'src/interfaces';
+import {
+  ICountAndItemAll,
+  IDetailItem,
+  IItemForSelect,
+  IMessage,
+} from 'src/interfaces';
 import { ActionOverEntity, NameEntities } from 'src/enums';
 import { CreateItemDto, UpdateItemDto } from './dto/create-item.dto';
 import { FindAllItemsDto } from './dto/find-all-items.dto';
@@ -66,6 +71,28 @@ export class ItemService {
       await this.trackingService.create(itemTrackingDto);
 
       return { msg: 'Item agregado correctamente.' };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  async fetchAllForSelect(): Promise<IItemForSelect[]> {
+    try {
+      const itemsForSelect = await this.itemRepository.find({
+        order: { name: 'DESC' },
+        select: [
+          'id',
+          'name',
+          'cabys',
+          'salePrice',
+          'saleDescription',
+          'saleAccount',
+          'saleTaxRate',
+        ],
+        relations: { cabys: true },
+      });
+
+      return itemsForSelect;
     } catch (error) {
       this.handleErrorOnDB(error);
     }

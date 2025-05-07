@@ -1,7 +1,7 @@
 export enum StatusQuote {
-  DRAFT = 'draft',
-  SENT = 'sent',
-  DECLINED = 'declined',
-  ACCEPTED = 'accepted',
-  INVOICED = 'invoiced',
+  DRAFT = 'borrador',
+  SENT = 'enviada',
+  DECLINED = 'rechazada',
+  ACCEPTED = 'aceptada',
+  INVOICED = 'facturada',
 }

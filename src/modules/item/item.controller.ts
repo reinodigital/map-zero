@@ -33,6 +33,12 @@ export class ItemController {
     return this.itemService.findAll(findAllItemsDto);
   }
 
+  // by the moment used at quote form at frontend
+  @Get('all-select')
+  findAllForSelect() {
+    return this.itemService.fetchAllForSelect();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(+id);
