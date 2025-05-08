@@ -17,8 +17,11 @@ export class Quote {
   @Column({ length: 32, nullable: false, default: StatusQuote.DRAFT })
   status: string;
 
-  @Column({ length: 32, nullable: false })
+  @Column({ length: 32, nullable: false, default: 'QU-' })
   quoteNumber: string;
+
+  @Column({ type: 'float', nullable: false })
+  total: number; // total to pay
 
   @Column({
     type: 'timestamp',
@@ -50,7 +53,7 @@ export class Quote {
   @ManyToOne(() => Client, (client) => client.quotes, { nullable: false })
   client: Client;
 
-  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.item, {
+  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.quote, {
     cascade: ['insert', 'update'],
   })
   quoteItems: QuoteItem[];

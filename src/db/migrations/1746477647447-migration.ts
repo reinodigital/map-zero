@@ -8,6 +8,7 @@ export class Migration1746477647447 implements MigrationInterface {
       `CREATE TABLE \`quote\` (
       \`id\` int NOT NULL AUTO_INCREMENT,
       \`status\` varchar(32) NOT NULL DEFAULT 'borrador',
+      \`total\` float NOT NULL,
       \`quoteNumber\` varchar(32) NOT NULL DEFAULT 'QU-',
       \`initDate\` timestamp NULL,
       \`expireDate\` timestamp NULL,

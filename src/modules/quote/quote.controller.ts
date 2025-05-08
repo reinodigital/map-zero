@@ -44,6 +44,7 @@ export class QuoteController {
   }
 
   @Get(':id')
+  @AuthDecorator()
   findOne(@Param('id') id: string) {
     return this.quoteService.findOne(+id);
   }

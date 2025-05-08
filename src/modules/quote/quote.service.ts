@@ -11,8 +11,8 @@ import { QuoteItem } from './entities/quote-item.entity';
 import { Client } from '../client/entities/client.entity';
 import { Item } from '../item/entities/item.entity';
 import { TrackingService } from '../tracking/tracking.service';
-import { formatDateAsReadable } from '../shared/helpers/format-date-as-readable.helper';
 
+import { getTaxRateValue } from '../shared/helpers/tax-rate';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
 import {
@@ -21,7 +21,8 @@ import {
   UpdateQuoteDto,
 } from './dto/create-quote.dto';
 import { ActionOverEntity, NameEntities } from 'src/enums';
-import { ICountAndQuoteAll, IMessage } from 'src/interfaces';
+import { ICountAndQuoteAll, IDetailQuote } from 'src/interfaces';
+import { NewQuoteFormAction } from '../../enums/quote.enum';
 
 @Injectable()
 export class QuoteService {
@@ -44,16 +45,36 @@ export class QuoteService {
   async create(
     createQuoteDto: CreateQuoteDto,
     userName: string,
-  ): Promise<IMessage> {
-    const { createdAt, clientId, quoteItems, status, ...restQuote } =
-      createQuoteDto;
+  ): Promise<Quote> {
+    const {
+      createdAt,
+      client: clientDto,
+      quoteItems,
+      status,
+      action,
+      ...restQuote
+    } = createQuoteDto.quote;
+
+    let emails: string[] = [];
+    if (createQuoteDto.email) {
+      emails = createQuoteDto.email.emails;
+    }
 
     try {
+      // email if action === send
+      if (action === NewQuoteFormAction.SEND && !emails.length) {
+        throw new BadRequestException(
+          'Se ocupa al menos un correo de bandeja para enviar la Cotización.',
+        );
+      }
+
       // verify exists Client
-      const client = await this.clientRepository.findOneBy({ id: clientId });
+      const client = await this.clientRepository.findOneBy({
+        id: clientDto.id,
+      });
       if (!client) {
         throw new BadRequestException(
-          `Cliente con ID: ${clientId} no encontrado.`,
+          `Cliente con ID: ${clientDto.id} no encontrado.`,
         );
       }
 
@@ -66,6 +87,7 @@ export class QuoteService {
         client,
         quoteItems: quoteItemsEntities,
         status,
+        total: totalToPay,
         ...restQuote,
       });
 
@@ -81,14 +103,14 @@ export class QuoteService {
         userName,
         ActionOverEntity.CREATED,
         createdAt,
-        `Cotización QU-${savedQuote.id} ${ActionOverEntity.CREATED} el ${formatDateAsReadable(createdAt)} por ${userName}`,
+        `Cotización QU-${savedQuote.id} ${status} a cliente ${client.name}`,
         savedQuote,
       );
       await this.trackingService.create(itemTrackingDto);
 
-      // TODO: 1-verify if status come as sent we need to send email with quote PDF file attached
+      // TODO: create PDF and send email with attached file
 
-      return { msg: `Cotización generada con estado ${status} correctamente.` };
+      return savedQuote;
     } catch (error) {
       this.handleErrorOnDB(error);
     }
@@ -105,6 +127,7 @@ export class QuoteService {
       order: {
         id: 'desc',
       },
+      relations: { client: true },
     };
 
     const whereConditions: any = {};
@@ -129,8 +152,32 @@ export class QuoteService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} quote`;
+  async findOne(id: number): Promise<IDetailQuote> {
+    try {
+      const quote = await this.quoteRepository.findOne({
+        where: { id },
+        relations: { client: true, quoteItems: { item: true } },
+      });
+
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${id} no encontrada.`,
+        );
+      }
+
+      // fetch trackings
+      const result: IDetailQuote = {
+        ...quote,
+        tracking: await this.trackingService.fetchTrackings(
+          NameEntities.QUOTE,
+          id,
+        ),
+      };
+
+      return result;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
   }
 
   update(id: number, updateQuoteDto: UpdateQuoteDto) {
@@ -165,21 +212,27 @@ export class QuoteService {
         );
       }
 
-      // TODO: decide if we will calculate total by cabys IVA or frontend select tax rate IVA
+      // README: IVA is being calculated by frontend select option tax rate
       const totalWithoutIVA =
         quoteItem.discount > 0
-          ? +(quoteItem.price - quoteItem.discount) * quantity
+          ? +(quoteItem.price - (quoteItem.discount * quoteItem.price) / 100) *
+            quantity
           : +quoteItem.price * quantity;
 
       const amountLine =
-        totalWithoutIVA + (totalWithoutIVA * itemEntity.cabys.tax) / 100;
+        totalWithoutIVA +
+        (totalWithoutIVA * getTaxRateValue(quoteItem.taxRate!)) / 100;
       totalAmount += amountLine;
 
       const newQuoteItem = this.quoteItemRepository.create({
-        amount: amountLine,
         item: itemEntity,
+        amount: amountLine,
         price: quoteItem.price,
         discount: quoteItem.discount ?? 0,
+        quantity: quoteItem.quantity,
+        description: quoteItem.description,
+        account: quoteItem.account,
+        taxRate: quoteItem.taxRate,
       });
 
       quoteItems.push(newQuoteItem);

@@ -14,15 +14,68 @@ import {
 } from 'class-validator';
 import { StatusQuote, TypeCurrency } from 'src/enums';
 
-export class CreateQuoteDto {
+export class EmailQuoteDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @Type(() => String)
+  @ValidateNested({ each: true })
+  emails: string[];
+
+  @IsOptional()
+  subject: string = 'Correo de cotización';
+
+  @IsOptional()
+  message: string =
+    `Hola, se le adjunta en este correo el PDF de cotización.\n\nGracias, saludos.`;
+}
+
+export class ClientQuoteDto {
+  @IsPositive()
+  @IsNumber()
+  id: number;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
+
+export class QuoteItemDto {
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  itemId: number;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsNumber()
+  @IsPositive()
+  @Min(1)
+  quantity: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsNotEmpty()
+  price: number;
+
+  @IsNumber()
+  @Min(0)
+  discount: number = 0;
+
+  @IsString()
+  account?: string;
+
+  @IsString()
+  taxRate?: string;
+}
+export class QuoteDto {
   @IsNotEmpty()
   @IsString()
   createdAt: string;
 
-  @IsPositive()
-  @IsNumber()
   @IsNotEmpty()
-  clientId: number;
+  client: ClientQuoteDto;
 
   @IsString()
   @IsNotEmpty()
@@ -59,38 +112,26 @@ export class CreateQuoteDto {
   @ValidateNested({ each: true })
   @Type(() => QuoteItemDto)
   quoteItems: QuoteItemDto[];
+
+  @IsString()
+  @IsNotEmpty()
+  action: string;
 }
 
-export class UpdateQuoteDto extends PartialType(CreateQuoteDto) {}
-
-export class QuoteItemDto {
+// CREATE
+export class CreateQuoteDto {
   @IsNotEmpty()
-  @IsNumber()
-  @IsPositive()
-  itemId: number;
+  @Type(() => QuoteDto)
+  quote: QuoteDto;
 
   @IsOptional()
-  @IsString()
-  description?: string;
+  @Type(() => EmailQuoteDto)
+  email: EmailQuoteDto;
+}
 
-  @IsNumber()
-  @IsPositive()
+// UPDATE
+export class UpdateQuoteDto extends PartialType(CreateQuoteDto) {
+  @IsString()
   @IsNotEmpty()
-  @Min(1)
-  quantity: number;
-
-  @IsNumber()
-  @IsPositive()
-  @IsNotEmpty()
-  price: number;
-
-  @IsNumber()
-  @Min(0)
-  discount: number = 0;
-
-  @IsString()
-  account?: string;
-
-  @IsString()
-  taxRate?: string;
+  action: string;
 }
