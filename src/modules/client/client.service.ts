@@ -259,7 +259,7 @@ export class ClientsService {
       action,
       executedAt: date,
       executedBy: userName,
-      detail: `Cliente ${client.name} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      detail: `Cliente ${client.name} ${action}`,
       refEntity: NameEntities.CLIENT,
       refEntityId: client.id,
     };

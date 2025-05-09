@@ -149,7 +149,7 @@ export class ClientContactService {
       action,
       executedAt: date,
       executedBy: userName,
-      detail: `Contacto con nombre ${clientContactName} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      detail: `Contacto con nombre ${clientContactName} ${action}`,
       refEntity: NameEntities.CLIENT,
       refEntityId: client.id,
     };

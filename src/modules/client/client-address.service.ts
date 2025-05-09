@@ -147,7 +147,7 @@ export class ClientAddressService {
       action,
       executedAt: date,
       executedBy: userName,
-      detail: `Dirección ${shortAddress} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      detail: `Dirección ${shortAddress} ${action}`,
       refEntity: NameEntities.CLIENT,
       refEntityId: client.id,
     };

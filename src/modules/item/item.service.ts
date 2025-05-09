@@ -230,7 +230,7 @@ export class ItemService {
       action,
       executedAt: date,
       executedBy: userName,
-      detail: `Item ${item.name} ${action} el ${formatDateAsReadable(date)} por ${userName}`,
+      detail: `Item ${item.name} ${action}`,
       refEntity: NameEntities.ITEM,
       refEntityId: item.id,
     };

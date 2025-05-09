@@ -103,12 +103,15 @@ export class QuoteService {
         userName,
         ActionOverEntity.CREATED,
         createdAt,
-        `Cotización QU-${savedQuote.id} ${status} a cliente ${client.name}`,
+        `Cotización QU-${savedQuote.id} creada con estado ${status}`,
         savedQuote,
       );
       await this.trackingService.create(itemTrackingDto);
 
-      // TODO: create PDF and send email with attached file
+      if (action === NewQuoteFormAction.SEND) {
+        // TODO: create PDF and send email with attached file
+        //
+      }
 
       return savedQuote;
     } catch (error) {
