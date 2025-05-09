@@ -11,6 +11,7 @@ import { QuoteItem } from './entities/quote-item.entity';
 import { Client } from '../client/entities/client.entity';
 import { Item } from '../item/entities/item.entity';
 import { TrackingService } from '../tracking/tracking.service';
+import { ReportService } from '../shared/services/report.service';
 
 import { getTaxRateValue } from '../shared/helpers/tax-rate';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
@@ -21,7 +22,7 @@ import {
   UpdateQuoteDto,
 } from './dto/create-quote.dto';
 import { ActionOverEntity, NameEntities } from 'src/enums';
-import { ICountAndQuoteAll, IDetailQuote } from 'src/interfaces';
+import { ICountAndQuoteAll, IDetailQuote, IMessage } from 'src/interfaces';
 import { NewQuoteFormAction } from '../../enums/quote.enum';
 
 @Injectable()
@@ -40,6 +41,7 @@ export class QuoteService {
     private readonly itemRepository: Repository<Item>,
 
     private readonly trackingService: TrackingService,
+    private readonly reportService: ReportService,
   ) {}
 
   async create(
@@ -114,6 +116,29 @@ export class QuoteService {
       }
 
       return savedQuote;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  public async generatePDF(quoteId: number): Promise<PDFKit.PDFDocument> {
+    try {
+      const quote = await this.quoteRepository.findOne({
+        where: { id: quoteId },
+        relations: {
+          client: { addresses: true },
+          quoteItems: { item: { cabys: true } },
+        },
+      });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      const doc = await this.reportService.generateQuotePDF(quote);
+
+      return doc;
     } catch (error) {
       this.handleErrorOnDB(error);
     }

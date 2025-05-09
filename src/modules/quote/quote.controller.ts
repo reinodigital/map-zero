@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import {
   Controller,
   Get,
@@ -7,6 +8,7 @@ import {
   Param,
   Delete,
   Query,
+  Res,
 } from '@nestjs/common';
 
 import { AuthDecorator, GetUser } from '../auth/decorators';
@@ -31,6 +33,25 @@ export class QuoteController {
     @GetUser(ListDataUser.name) userName: string,
   ) {
     return this.quoteService.create(createQuoteDto, userName);
+  }
+
+  @Get('/generate-pdf/:quoteId')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  async generatePDF(
+    @Param('quoteId') quoteId: string,
+    @Res() response: Response,
+  ) {
+    const pdfDoc = await this.quoteService.generatePDF(+quoteId);
+
+    response.setHeader('Content-Type', 'application/pdf');
+
+    pdfDoc.info.Title = 'Cotización';
+    pdfDoc.pipe(response);
+    pdfDoc.end();
   }
 
   @Get()

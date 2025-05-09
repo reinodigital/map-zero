@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { ClientsModule } from '../client/client.module';
 import { ItemModule } from '../item/item.module';
+import { SharedModule } from '../shared/shared.module';
 
 import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
@@ -18,6 +19,7 @@ import { QuoteService } from './quote.service';
     AuthModule,
     ClientsModule,
     ItemModule,
+    SharedModule,
   ],
   exports: [TypeOrmModule],
 })
