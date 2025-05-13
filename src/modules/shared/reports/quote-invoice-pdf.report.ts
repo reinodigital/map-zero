@@ -37,7 +37,14 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
     expireDate = null,
     client,
     quoteItems,
+    terms = '',
   } = quote;
+
+  const readableInitDate = formatDateAsReadable(initDate!.toISOString(), false);
+  const readableExpireDate = formatDateAsReadable(
+    expireDate?.toISOString() ?? '',
+    false,
+  );
 
   const { iva, descuentos, subtotal, total } = quoteTotals(quoteItems);
   const clientAddress = client.addresses?.length
@@ -108,11 +115,11 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
           {
             text: [
               {
-                text: `Fecha inicio: ${formatDateAsReadable(initDate!.toISOString())}\n`,
+                text: `Fecha inicio: ${readableInitDate}\n`,
                 bold: true,
               },
               {
-                text: `Fecha vencimiento: ${expireDate ? formatDateAsReadable(expireDate.toISOString()) : ''}\n`,
+                text: `Fecha vencimiento: ${expireDate ? readableExpireDate : ''}\n`,
                 bold: true,
               },
             ],
@@ -146,6 +153,12 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
       // subtotal, discount, IVA and total
       {
         columns: [
+          {
+            width: 250,
+            marginTop: 10,
+            fontSize: 10,
+            text: `Términos: ${terms}`,
+          },
           {
             width: '*',
             text: '',

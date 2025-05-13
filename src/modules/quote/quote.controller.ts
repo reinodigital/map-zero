@@ -9,12 +9,17 @@ import {
   Delete,
   Query,
   Res,
+  ParseIntPipe,
 } from '@nestjs/common';
 
 import { AuthDecorator, GetUser } from '../auth/decorators';
 import { QuoteService } from './quote.service';
 
-import { CreateQuoteDto, UpdateQuoteDto } from './dto/create-quote.dto';
+import {
+  CreateQuoteDto,
+  EmailQuoteDto,
+  UpdateQuoteDto,
+} from './dto/create-quote.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
 import { ListDataUser, SecurityRoles } from 'src/enums';
 
@@ -33,6 +38,20 @@ export class QuoteController {
     @GetUser(ListDataUser.name) userName: string,
   ) {
     return this.quoteService.create(createQuoteDto, userName);
+  }
+
+  @Post('/send-email/:quoteId')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  async sendEmail(
+    @Param('quoteId', ParseIntPipe) quoteId: string,
+    @Body() emailQuoteDto: EmailQuoteDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.sendEmailQuote(+quoteId, emailQuoteDto, userName);
   }
 
   @Get('/generate-pdf/:quoteId')

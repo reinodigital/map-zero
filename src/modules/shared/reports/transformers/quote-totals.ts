@@ -7,8 +7,7 @@ export const quoteTotals = (quoteItems: QuoteItem[]) => {
   const { subtotal, descuentos, iva }: any = quoteItems.reduce(
     (acc, item) => {
       const subtotalLine = item.quantity * item.price; // Price before discount & tax
-      const discountLine =
-        item.discount > 0 ? item.price - (item.price * item.discount) / 100 : 0; // Discount amount
+      const discountLine = item.quantity * ((item.price * item.discount) / 100); // Discount amount
       const totalLine = subtotalLine - discountLine;
 
       const itemIva = totalLine * (getTaxRateValue(item.taxRate ?? '08') / 100); // IVA after discount

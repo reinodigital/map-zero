@@ -12,18 +12,19 @@ import { Client } from '../client/entities/client.entity';
 import { Item } from '../item/entities/item.entity';
 import { TrackingService } from '../tracking/tracking.service';
 import { ReportService } from '../shared/services/report.service';
+import { NodemailerService } from '../shared/services/nodemailer.service';
 
 import { getTaxRateValue } from '../shared/helpers/tax-rate';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
 import {
   CreateQuoteDto,
+  EmailQuoteDto,
   QuoteItemDto,
   UpdateQuoteDto,
 } from './dto/create-quote.dto';
 import { ActionOverEntity, NameEntities } from 'src/enums';
 import { ICountAndQuoteAll, IDetailQuote, IMessage } from 'src/interfaces';
-import { NewQuoteFormAction } from '../../enums/quote.enum';
 
 @Injectable()
 export class QuoteService {
@@ -42,6 +43,7 @@ export class QuoteService {
 
     private readonly trackingService: TrackingService,
     private readonly reportService: ReportService,
+    private readonly nodemailerService: NodemailerService,
   ) {}
 
   async create(
@@ -57,19 +59,7 @@ export class QuoteService {
       ...restQuote
     } = createQuoteDto.quote;
 
-    let emails: string[] = [];
-    if (createQuoteDto.email) {
-      emails = createQuoteDto.email.emails;
-    }
-
     try {
-      // email if action === send
-      if (action === NewQuoteFormAction.SEND && !emails.length) {
-        throw new BadRequestException(
-          'Se ocupa al menos un correo de bandeja para enviar la Cotización.',
-        );
-      }
-
       // verify exists Client
       const client = await this.clientRepository.findOneBy({
         id: clientDto.id,
@@ -110,12 +100,52 @@ export class QuoteService {
       );
       await this.trackingService.create(itemTrackingDto);
 
-      if (action === NewQuoteFormAction.SEND) {
-        // TODO: create PDF and send email with attached file
-        //
+      return savedQuote;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  public async sendEmailQuote(
+    quoteId: number,
+    emailQuoteDto: EmailQuoteDto,
+    userName: string,
+  ): Promise<IMessage> {
+    try {
+      const quote = await this.quoteRepository.findOne({
+        where: { id: quoteId },
+        relations: {
+          client: { addresses: true },
+          quoteItems: { item: { cabys: true } },
+        },
+      });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
       }
 
-      return savedQuote;
+      if (!emailQuoteDto.emails || !emailQuoteDto.emails.length) {
+        throw new BadRequestException(
+          'Se ocupa el menos una bandeja de correo para enviar la cotización.',
+        );
+      }
+
+      await this.nodemailerService.sendQuoteEmail(quote, emailQuoteDto);
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.SENT,
+        emailQuoteDto.sentAt,
+        `Cotización ${quote.quoteNumber} enviada por correo electrónico`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización enviada correctamente por correo electrónico.`,
+      };
     } catch (error) {
       this.handleErrorOnDB(error);
     }

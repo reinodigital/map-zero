@@ -15,10 +15,14 @@ import {
 import { StatusQuote, TypeCurrency } from 'src/enums';
 
 export class EmailQuoteDto {
+  @IsString()
+  @IsNotEmpty()
+  sentAt: string;
+
   @IsArray()
   @ArrayMinSize(1)
+  @IsString({ each: true })
   @Type(() => String)
-  @ValidateNested({ each: true })
   emails: string[];
 
   @IsOptional()
@@ -123,10 +127,6 @@ export class CreateQuoteDto {
   @IsNotEmpty()
   @Type(() => QuoteDto)
   quote: QuoteDto;
-
-  @IsOptional()
-  @Type(() => EmailQuoteDto)
-  email: EmailQuoteDto;
 }
 
 // UPDATE

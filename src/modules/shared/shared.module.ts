@@ -13,6 +13,6 @@ import { NodemailerService } from './services/nodemailer.service';
     NodemailerService,
   ],
   imports: [],
-  exports: [ReportService],
+  exports: [ReportService, NodemailerService],
 })
 export class SharedModule {}

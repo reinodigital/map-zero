@@ -32,6 +32,7 @@ export class NodemailerService {
         documentName: 'Cotización',
         clientName: quote.client.name,
         quoteNumber: quote.quoteNumber,
+        message: dataEmail.message ?? '',
       },
     );
 
@@ -51,8 +52,9 @@ export class NodemailerService {
     // Email options
     // changeMe!
     const mailOptions = {
-      from: '"MAP Soluciones" <onier0217@gmail.com>',
-      to: dataEmail.emails[0],
+      from: '"MAP Soluciones" <onier0217@gmail.com>', // changeMe!
+      // to: dataEmail.emails[0], // send only one email
+      bcc: dataEmail.emails.join(', '), // bcc => No one sees others' emails
       subject: dataEmail.subject ?? 'Cotización',
       html: emailHtml,
       attachments: [
