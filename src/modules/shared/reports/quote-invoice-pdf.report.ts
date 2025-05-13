@@ -1,15 +1,18 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
-import { quoteTotals } from './transformers/quote-totals';
 import { Quote } from 'src/modules/quote/entities/quote.entity';
-import { formatDateAsReadable } from '../helpers/format-date-as-readable.helper';
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
+
+import { quoteTotals } from './transformers/quote-totals';
+import { formatDateAsReadable } from '../helpers/format-date-as-readable.helper';
 import { CurrencyFormatter } from '../helpers/currency-formatter';
+import { getTaxRateValue } from '../helpers/tax-rate';
+import { footerSection } from './footer.report';
 
 const logo: Content = {
   image: '/usr/src/app/seed-data/map_logo.png',
-  width: 90,
-  height: 90,
+  width: 170,
+  height: 170,
   alignment: 'left',
   margin: [-2, 0, 0, 0],
 };
@@ -26,8 +29,9 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
   const emptyField = 'no presenta';
   const {
     id,
-    quoteNumber,
     status,
+    quoteNumber,
+    currency,
     total: totalToPay,
     initDate,
     expireDate = null,
@@ -48,44 +52,46 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
     // Header
     // header: headerSection({ title: null }),
 
-    // footer
-    // footer: footerSection,
-
     pageMargins: [10, 0],
     pageSize: 'A4', // standard for receipt size
     content: [
       // header
       {
-        columns: [logo],
-      },
-      {
-        columns: [
-          {
-            text: [
-              { text: 'MAP SOLUCIONES S.A\n', bold: true },
-              { text: 'Cédula Jurídica: 3-101-578509\n' },
-              { text: 'Teléfono: (+506) 4010-1111\n' },
-              { text: 'Guachipelín de Escazú\n' },
-              { text: 'San José, Costa Rica\n' },
-              { text: 'www.mapsoluciones.com\n' },
-              // { text: 'Correo: info@mapsoluciones.com\n' },
-            ],
-            alignment: 'left',
-          },
-          {
-            text: [
+        margin: [0, 20, 0, 0],
+        table: {
+          widths: ['33%', '34%', '33%'], // Equal widths for 3 columns
+          body: [
+            [
+              logo,
               {
-                text: `Cotización\n`,
-                style: { bold: true, fontSize: 18 },
+                margin: [0, 50, 0, 0],
+                alignment: 'center',
+                stack: [
+                  { text: 'MAP SOLUCIONES S.A', bold: true },
+                  { text: 'Cédula Jurídica: 3-101-578509' },
+                  { text: 'Teléfono: (+506) 4010-1111' },
+                  { text: 'Guachipelín de Escazú' },
+                  { text: 'San José, Costa Rica' },
+                  { text: 'www.mapsoluciones.com' },
+                ],
+              },
+              {
+                margin: [0, 50, 0, 0],
+                alignment: 'right',
+                stack: [
+                  { text: `Cotización`, bold: true, fontSize: 18 },
+                  { text: `No. ${quoteNumber}`, bold: true, fontSize: 14 },
+                ],
               },
             ],
-            alignment: 'right',
-          },
-        ],
+          ],
+        },
+        layout: 'noBorders',
       },
 
       // Client
       {
+        margin: [0, 20, 0, 0],
         columns: [
           {
             text: [
@@ -118,17 +124,20 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
       // Table of products
       {
         layout: 'bordered',
-        margin: [0, 5],
+        margin: [0, 20, 0, 0],
         table: {
           headerRows: 1,
-          widths: ['*', 30, 'auto', 'auto'],
+          widths: ['*', 30, 'auto', 'auto', 'auto'],
           body: [
-            ['Descripción', 'Cant', 'Precio', 'Impuesto'],
+            ['Descripción', 'Cant', 'Precio', 'Impuesto', `Monto ${currency}`],
             ...quoteItems.map((quoteItem: QuoteItem) => [
               quoteItem.description ?? '',
               quoteItem.quantity.toString(),
               CurrencyFormatter.formatPrice(quoteItem.price),
-              quoteItem.taxRate ?? '',
+              `${getTaxRateValue(quoteItem.taxRate ?? '')}%`,
+              CurrencyFormatter.formatPrice(
+                quoteItem.price * quoteItem.quantity,
+              ),
             ]),
           ],
         },
@@ -169,10 +178,11 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
                   },
                 ],
                 [
-                  { text: 'Total', bold: true },
+                  { text: 'Total', bold: true, marginTop: 8 },
                   {
-                    text: `${CurrencyFormatter.formatPrice(total)}`,
+                    text: `${currency} ${CurrencyFormatter.formatPrice(total)}`,
                     bold: true,
+                    marginTop: 8,
                     alignment: 'right',
                   },
                 ],
@@ -182,20 +192,55 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
         ],
       },
 
-      // footer // TODO: set here partner images logo
+      // signatures
       {
-        marginTop: 10,
-        columns: [
-          {
-            text: [
+        margin: [0, 30, 0, 0],
+        table: {
+          widths: ['50%', '50%'],
+          body: [
+            [
               {
-                text: `www.mapsoluciones.com`,
+                stack: [
+                  { text: 'Firma cliente', margin: [0, 0, 0, 4] },
+                  {
+                    canvas: [
+                      {
+                        type: 'line',
+                        x1: 0,
+                        y1: 0,
+                        x2: 250,
+                        y2: 0,
+                        lineWidth: 1,
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                stack: [
+                  { text: 'No. identificación', margin: [0, 0, 0, 4] },
+                  {
+                    canvas: [
+                      {
+                        type: 'line',
+                        x1: 0,
+                        y1: 0,
+                        x2: 250,
+                        y2: 0,
+                        lineWidth: 1,
+                      },
+                    ],
+                  },
+                ],
               },
             ],
-            alignment: 'left',
-          },
-        ],
+          ],
+        },
+        layout: 'noBorders',
       },
+
+      // partner logos
+      footerSection(),
     ],
   };
 };
