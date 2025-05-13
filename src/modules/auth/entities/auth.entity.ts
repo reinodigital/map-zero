@@ -1,5 +1,6 @@
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 import { SecurityRoles } from 'src/enums';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('auth')
 export class Auth {
@@ -30,4 +31,8 @@ export class Auth {
 
   @Column({ type: 'boolean', nullable: false, default: true })
   isActive: boolean;
+
+  /* Relations */
+  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.seller)
+  quoteItems: QuoteItem[];
 }

@@ -50,6 +50,11 @@ export class QuoteItemDto {
   itemId: number;
 
   @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  sellerUid: number | null;
+
+  @IsOptional()
   @IsString()
   description?: string;
 

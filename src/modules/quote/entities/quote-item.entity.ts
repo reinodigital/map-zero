@@ -1,4 +1,5 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Auth } from 'src/modules/auth/entities/auth.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
 import { Quote } from './quote.entity';
 
@@ -28,10 +29,14 @@ export class QuoteItem {
   @Column({ type: 'float', nullable: false })
   amount: number; // calculation with discount and IVA
 
+  /* Relation */
   @ManyToOne(() => Item, (item) => item.quoteItems, {
     nullable: false,
   })
   item: Item;
+
+  @ManyToOne(() => Auth, (auth) => auth.quoteItems, { nullable: true })
+  seller?: Auth | null;
 
   @ManyToOne(() => Quote, (quote) => quote.quoteItems, {
     nullable: false,

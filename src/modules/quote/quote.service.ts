@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Repository } from 'typeorm';
 
+import { Auth } from '../auth/entities/auth.entity';
 import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
 import { Client } from '../client/entities/client.entity';
@@ -40,6 +41,9 @@ export class QuoteService {
 
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
+
+    @InjectRepository(Auth)
+    private readonly authRepository: Repository<Auth>,
 
     private readonly trackingService: TrackingService,
     private readonly reportService: ReportService,
@@ -212,10 +216,16 @@ export class QuoteService {
 
   async findOne(id: number): Promise<IDetailQuote> {
     try {
-      const quote = await this.quoteRepository.findOne({
-        where: { id },
-        relations: { client: true, quoteItems: { item: true } },
-      });
+      const quote = await this.quoteRepository
+        .createQueryBuilder('quote')
+        .leftJoinAndSelect('quote.client', 'client')
+        .leftJoinAndSelect('quote.quoteItems', 'quoteItems')
+        .leftJoin('quoteItems.item', 'item') // You can also use leftJoinAndSelect if needed
+        .leftJoin('quoteItems.seller', 'seller')
+        .addSelect(['item.name']) // Only select seller.name and seller.uid
+        .addSelect(['seller.name', 'seller.uid']) // Only select seller.name and seller.uid
+        .where('quote.id = :id', { id })
+        .getOne();
 
       if (!quote) {
         throw new BadRequestException(
@@ -253,50 +263,71 @@ export class QuoteService {
     let totalAmount: number = 0;
     const quoteItems: QuoteItem[] = [];
 
-    for (const quoteItem of items) {
-      const { quantity, itemId } = quoteItem;
-      const itemEntity = await this.itemRepository.findOne({
-        where: { id: itemId },
-        relations: { cabys: true },
-      });
+    try {
+      for (const quoteItem of items) {
+        const { quantity, itemId, sellerUid = null } = quoteItem;
+        const itemEntity = await this.itemRepository.findOne({
+          where: { id: itemId },
+          relations: { cabys: true },
+        });
 
-      if (!itemEntity) {
-        throw new BadRequestException(`Item con ID: ${itemId} no encontrado.`);
+        if (!itemEntity) {
+          throw new BadRequestException(
+            `Item con ID: ${itemId} no encontrado.`,
+          );
+        }
+
+        if (!itemEntity!.cabys) {
+          throw new BadRequestException(
+            `Item ${itemEntity.name} no contiene cabys y es obligatorio cada item contenga su cabys.`,
+          );
+        }
+
+        let sellerEntity: Auth | null = null;
+        if (sellerUid) {
+          sellerEntity = await this.authRepository.findOneBy({
+            uid: sellerUid,
+          });
+        }
+        if (sellerUid && !sellerEntity) {
+          throw new BadRequestException(
+            `Vendedor con ID: ${sellerUid} no encontrado.`,
+          );
+        }
+
+        // README: IVA is being calculated by frontend select option tax rate
+        const totalWithoutIVA =
+          quoteItem.discount > 0
+            ? +(
+                quoteItem.price -
+                (quoteItem.discount * quoteItem.price) / 100
+              ) * quantity
+            : +quoteItem.price * quantity;
+
+        const amountLine =
+          totalWithoutIVA +
+          (totalWithoutIVA * getTaxRateValue(quoteItem.taxRate!)) / 100;
+        totalAmount += amountLine;
+
+        const newQuoteItem = this.quoteItemRepository.create({
+          item: itemEntity,
+          seller: sellerEntity ?? null,
+          amount: amountLine,
+          price: quoteItem.price,
+          discount: quoteItem.discount ?? 0,
+          quantity: quoteItem.quantity,
+          description: quoteItem.description,
+          account: quoteItem.account,
+          taxRate: quoteItem.taxRate,
+        });
+
+        quoteItems.push(newQuoteItem);
       }
 
-      if (!itemEntity!.cabys) {
-        throw new BadRequestException(
-          `Item ${itemEntity.name} no contiene cabys y es obligatorio cada item contenga su cabys.`,
-        );
-      }
-
-      // README: IVA is being calculated by frontend select option tax rate
-      const totalWithoutIVA =
-        quoteItem.discount > 0
-          ? +(quoteItem.price - (quoteItem.discount * quoteItem.price) / 100) *
-            quantity
-          : +quoteItem.price * quantity;
-
-      const amountLine =
-        totalWithoutIVA +
-        (totalWithoutIVA * getTaxRateValue(quoteItem.taxRate!)) / 100;
-      totalAmount += amountLine;
-
-      const newQuoteItem = this.quoteItemRepository.create({
-        item: itemEntity,
-        amount: amountLine,
-        price: quoteItem.price,
-        discount: quoteItem.discount ?? 0,
-        quantity: quoteItem.quantity,
-        description: quoteItem.description,
-        account: quoteItem.account,
-        taxRate: quoteItem.taxRate,
-      });
-
-      quoteItems.push(newQuoteItem);
+      return [quoteItems, totalAmount];
+    } catch (error) {
+      this.handleErrorOnDB(error);
     }
-
-    return [quoteItems, totalAmount];
   }
 
   private generateTracking(
