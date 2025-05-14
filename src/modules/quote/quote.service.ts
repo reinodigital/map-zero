@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, Repository } from 'typeorm';
+import { FindManyOptions, Like, Repository } from 'typeorm';
 
 import { Auth } from '../auth/entities/auth.entity';
 import { Quote } from './entities/quote.entity';
@@ -24,7 +24,8 @@ import {
   QuoteItemDto,
   UpdateQuoteDto,
 } from './dto/create-quote.dto';
-import { ActionOverEntity, NameEntities } from 'src/enums';
+import { UpdateQuoteStatusDto } from './dto/update-quote-status.dto';
+import { ActionOverEntity, NameEntities, StatusQuote } from 'src/enums';
 import { ICountAndQuoteAll, IDetailQuote, IMessage } from 'src/interfaces';
 
 @Injectable()
@@ -142,10 +143,18 @@ export class QuoteService {
         userName,
         ActionOverEntity.SENT,
         emailQuoteDto.sentAt,
-        `Cotización ${quote.quoteNumber} enviada por correo electrónico`,
+        `Cotización ${quote.quoteNumber} enviada por correo electrónico [${emailQuoteDto.emails.join(', ')}]`,
         quote,
       );
       await this.trackingService.create(itemTrackingDto);
+
+      // verify if status quote is draft to update it to sent
+      if (quote.status === StatusQuote.DRAFT) {
+        await this.quoteRepository.update(
+          { id: quote.id },
+          { status: StatusQuote.SENT },
+        );
+      }
 
       return {
         msg: `Cotización enviada correctamente por correo electrónico.`,
@@ -181,7 +190,12 @@ export class QuoteService {
   async findAll(
     findAllQuotesDto: FindAllQuotesDto,
   ): Promise<ICountAndQuoteAll> {
-    const { limit = 10, offset = 0, status = null } = findAllQuotesDto;
+    const {
+      limit = 10,
+      offset = 0,
+      status = null,
+      quoteNumber = null,
+    } = findAllQuotesDto;
 
     const findOptions: FindManyOptions<Quote> = {
       take: limit,
@@ -195,6 +209,9 @@ export class QuoteService {
     const whereConditions: any = {};
     if (status) {
       whereConditions.status = status;
+    }
+    if (quoteNumber) {
+      whereConditions.quoteNumber = Like(`%${quoteNumber}%`);
     }
 
     if (Object.keys(whereConditions).length) {
@@ -255,6 +272,225 @@ export class QuoteService {
   remove(id: number) {
     return `This action removes a #${id} quote`;
   }
+
+  // WORKFLOW STEP 1
+  async markAsSent(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const { updatedAt } = updateQuoteStatusDto;
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      if (quote.status === StatusQuote.SENT) {
+        return {
+          msg: `Cotización ${quote.quoteNumber} ya estaba con estado enviada anteriormente.`,
+        };
+      }
+
+      const allowedStatusToMarkAsSent = [StatusQuote.DRAFT];
+
+      if (!allowedStatusToMarkAsSent.includes(quote.status as StatusQuote)) {
+        throw new BadRequestException(
+          `No se permite marcar cotización como enviada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsSent.join(', ')}]`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.SENT },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.SENT,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} marcada como enviada`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} marcada como enviada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  // WORKFLOW STEP 2 - ACCEPTED
+  async markAsAccepted(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const { updatedAt } = updateQuoteStatusDto;
+
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      if (quote.status === StatusQuote.ACCEPTED) {
+        return {
+          msg: `Cotización ${quote.quoteNumber} ya estaba con estado aceptada anteriormente.`,
+        };
+      }
+
+      const allowedStatusToMarkAsAccepted = [StatusQuote.SENT];
+
+      if (
+        !allowedStatusToMarkAsAccepted.includes(quote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `No se permite marcar cotización como aceptada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsAccepted.join(', ')}]`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.ACCEPTED },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.ACCEPTED,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} marcada como aceptada`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} marcada como aceptada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  // WORKFLOW STEP 2 - DECLINED
+  async markAsDeclined(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const { updatedAt } = updateQuoteStatusDto;
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      if (quote.status === StatusQuote.DECLINED) {
+        return {
+          msg: `Cotización ${quote.quoteNumber} ya estaba con estado rechazada anteriormente.`,
+        };
+      }
+
+      const allowedStatusToMarkAsDeclined = [StatusQuote.SENT];
+
+      if (
+        !allowedStatusToMarkAsDeclined.includes(quote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `No se permite marcar cotización como rechazada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsDeclined.join(', ')}]`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.DECLINED },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.DECLINED,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} marcada como rechazada`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} marcada como rechazada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  // WORKFLOW STEP 3
+  async markAsInvoiced(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const { updatedAt } = updateQuoteStatusDto;
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      if (quote.status === StatusQuote.INVOICED) {
+        return {
+          msg: `Cotización ${quote.quoteNumber} ya estaba con estado facturada anteriormente.`,
+        };
+      }
+
+      const allowedStatusToMarkAsInvoiced = [StatusQuote.ACCEPTED];
+
+      if (
+        !allowedStatusToMarkAsInvoiced.includes(quote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `No se permite marcar cotización como facturada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsInvoiced.join(', ')}]`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.INVOICED },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.INVOICED,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} marcada como facturada`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} marcada como facturada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  // TODO: create endpoint to unmark as sent
+  // TODO: create endpoint to unmark as accepted
+  // TODO: create endpoint to unmark as invoiced
 
   // ============ PRIVATES METHODS ===============
   private async createQuoteItems(

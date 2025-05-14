@@ -21,11 +21,26 @@ import {
   UpdateQuoteDto,
 } from './dto/create-quote.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
+import { UpdateQuoteStatusDto } from './dto/update-quote-status.dto';
 import { ListDataUser, SecurityRoles } from 'src/enums';
 
 @Controller('quote')
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
+
+  @Post('send-email/:quoteId')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  async sendEmail(
+    @Param('quoteId', ParseIntPipe) quoteId: string,
+    @Body() emailQuoteDto: EmailQuoteDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.sendEmailQuote(+quoteId, emailQuoteDto, userName);
+  }
 
   @Post()
   @AuthDecorator(
@@ -40,21 +55,7 @@ export class QuoteController {
     return this.quoteService.create(createQuoteDto, userName);
   }
 
-  @Post('/send-email/:quoteId')
-  @AuthDecorator(
-    SecurityRoles.SUPER_ADMIN,
-    SecurityRoles.ADMIN,
-    SecurityRoles.SELLER,
-  )
-  async sendEmail(
-    @Param('quoteId', ParseIntPipe) quoteId: string,
-    @Body() emailQuoteDto: EmailQuoteDto,
-    @GetUser(ListDataUser.name) userName: string,
-  ) {
-    return this.quoteService.sendEmailQuote(+quoteId, emailQuoteDto, userName);
-  }
-
-  @Get('/generate-pdf/:quoteId')
+  @Get('generate-pdf/:quoteId')
   @AuthDecorator(
     SecurityRoles.SUPER_ADMIN,
     SecurityRoles.ADMIN,
@@ -89,8 +90,76 @@ export class QuoteController {
     return this.quoteService.findOne(+id);
   }
 
+  @Patch('mark-as-sent/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  markAsSent(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.markAsSent(+id, updateQuoteStatusDto, userName);
+  }
+  @Patch('mark-as-accepted/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  markAsAccepted(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.markAsAccepted(
+      +id,
+      updateQuoteStatusDto,
+      userName,
+    );
+  }
+  @Patch('mark-as-declined/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  markAsDeclined(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.markAsDeclined(
+      +id,
+      updateQuoteStatusDto,
+      userName,
+    );
+  }
+  @Patch('mark-as-invoiced/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  markAsInvoiced(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.markAsInvoiced(
+      +id,
+      updateQuoteStatusDto,
+      userName,
+    );
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuoteDto: UpdateQuoteDto) {
+  update(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteDto: UpdateQuoteDto,
+  ) {
     return this.quoteService.update(+id, updateQuoteDto);
   }
 
