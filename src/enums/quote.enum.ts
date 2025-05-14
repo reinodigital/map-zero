@@ -4,6 +4,7 @@ export enum StatusQuote {
   DECLINED = 'rechazada',
   ACCEPTED = 'aceptada',
   INVOICED = 'facturada',
+  REMOVED = 'removida',
 }
 
 export enum NewQuoteFormAction {

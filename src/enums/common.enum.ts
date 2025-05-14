@@ -9,4 +9,5 @@ export enum ActionOverEntity {
   RECEIVED = 'recibido',
   VIEWED = 'visto',
   ADDED = 'agregado',
+  CHANGE_STATUS = 'cambio_estado',
 }

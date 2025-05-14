@@ -90,6 +90,7 @@ export class QuoteController {
     return this.quoteService.findOne(+id);
   }
 
+  /* Mark Quotes */
   @Patch('mark-as-sent/:id')
   @AuthDecorator(
     SecurityRoles.SUPER_ADMIN,
@@ -103,6 +104,7 @@ export class QuoteController {
   ) {
     return this.quoteService.markAsSent(+id, updateQuoteStatusDto, userName);
   }
+
   @Patch('mark-as-accepted/:id')
   @AuthDecorator(
     SecurityRoles.SUPER_ADMIN,
@@ -120,6 +122,7 @@ export class QuoteController {
       userName,
     );
   }
+
   @Patch('mark-as-declined/:id')
   @AuthDecorator(
     SecurityRoles.SUPER_ADMIN,
@@ -137,6 +140,7 @@ export class QuoteController {
       userName,
     );
   }
+
   @Patch('mark-as-invoiced/:id')
   @AuthDecorator(
     SecurityRoles.SUPER_ADMIN,
@@ -154,6 +158,63 @@ export class QuoteController {
       userName,
     );
   }
+  /* End Mark Quotes */
+
+  /* UnMark Quotes */
+  @Patch('undo-mark-as-accepted/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  undoMarkAsAccepted(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.unMarkAsAccepted(
+      +id,
+      updateQuoteStatusDto,
+      userName,
+    );
+  }
+
+  @Patch('undo-mark-as-declined/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  undoMarkAsDeclined(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.unMarkAsDeclined(
+      +id,
+      updateQuoteStatusDto,
+      userName,
+    );
+  }
+
+  @Patch('undo-mark-as-invoiced/:id')
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  undoMarkAsInvoiced(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateQuoteStatusDto: UpdateQuoteStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.unMarkAsInvoiced(
+      +id,
+      updateQuoteStatusDto,
+      userName,
+    );
+  }
+  /* END UnMark Quotes */
 
   @Patch(':id')
   update(
@@ -164,7 +225,16 @@ export class QuoteController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.quoteService.remove(+id);
+  @AuthDecorator(
+    SecurityRoles.SUPER_ADMIN,
+    SecurityRoles.ADMIN,
+    SecurityRoles.SELLER,
+  )
+  remove(
+    @Param('id') id: string,
+    @Query('removedAt') removedAt: string,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.remove(+id, removedAt, userName);
   }
 }

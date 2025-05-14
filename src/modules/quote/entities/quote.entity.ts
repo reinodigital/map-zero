@@ -49,6 +49,9 @@ export class Quote {
   @Column({ nullable: true, default: null })
   terms?: string; // field to explain some term or condition
 
+  @Column({ type: 'boolean', nullable: false, default: true })
+  isActive: boolean;
+
   // Relations
   @ManyToOne(() => Client, (client) => client.quotes, { nullable: false })
   client: Client;

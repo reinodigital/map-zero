@@ -269,8 +269,38 @@ export class QuoteService {
     return `This action updates a #${id} quote`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} quote`;
+  async remove(
+    id: number,
+    removedAt: string,
+    userName: string,
+  ): Promise<IMessage> {
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${id} no encontrada.`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id },
+        { status: StatusQuote.REMOVED, isActive: false },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.REMOVED,
+        removedAt,
+        `Cotización ${quote.quoteNumber} removida`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return { msg: `Cotización ${quote.quoteNumber} removida correctamente.` };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
   }
 
   // WORKFLOW STEP 1
@@ -488,9 +518,148 @@ export class QuoteService {
     }
   }
 
-  // TODO: create endpoint to unmark as sent
-  // TODO: create endpoint to unmark as accepted
-  // TODO: create endpoint to unmark as invoiced
+  /* UnMark quotes*/
+  async unMarkAsAccepted(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ) {
+    const { updatedAt } = updateQuoteStatusDto;
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      const allowedStatusToUnMarkAsAccepted = [StatusQuote.ACCEPTED];
+
+      if (
+        !allowedStatusToUnMarkAsAccepted.includes(quote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `No se permite desmarcar como aceptada una cotización si no presenta estado: ${allowedStatusToUnMarkAsAccepted}`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.SENT },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.CHANGE_STATUS,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} cambia estado de ${StatusQuote.ACCEPTED} a ${StatusQuote.SENT}`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} desmarcada como aceptada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  async unMarkAsDeclined(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ) {
+    const { updatedAt } = updateQuoteStatusDto;
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      const allowedStatusToUnMarkAsDeclined = [StatusQuote.DECLINED];
+
+      if (
+        !allowedStatusToUnMarkAsDeclined.includes(quote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `No se permite desmarcar como rechazada una cotización si no presenta estado: ${allowedStatusToUnMarkAsDeclined}`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.SENT },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.CHANGE_STATUS,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} cambia estado de ${StatusQuote.DECLINED} a ${StatusQuote.SENT}`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} desmarcada como rechazada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  async unMarkAsInvoiced(
+    quoteId: number,
+    updateQuoteStatusDto: UpdateQuoteStatusDto,
+    userName: string,
+  ) {
+    const { updatedAt } = updateQuoteStatusDto;
+    try {
+      const quote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (!quote) {
+        throw new BadRequestException(
+          `Cotización con ID: ${quoteId} no encontrada.`,
+        );
+      }
+
+      const allowedStatusToUnMarkAsInvoiced = [StatusQuote.INVOICED];
+
+      if (
+        !allowedStatusToUnMarkAsInvoiced.includes(quote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `No se permite desmarcar como facturada una cotización si no presenta estado: ${allowedStatusToUnMarkAsInvoiced}`,
+        );
+      }
+
+      await this.quoteRepository.update(
+        { id: quoteId },
+        { status: StatusQuote.ACCEPTED },
+      );
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.CHANGE_STATUS,
+        updatedAt,
+        `Cotización ${quote.quoteNumber} cambia estado de ${StatusQuote.INVOICED} a ${StatusQuote.ACCEPTED}`,
+        quote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return {
+        msg: `Cotización ${quote.quoteNumber} desmarcada como facturada correctamente.`,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+  /* END UnMark quotes*/
 
   // ============ PRIVATES METHODS ===============
   private async createQuoteItems(
