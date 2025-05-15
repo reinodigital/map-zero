@@ -219,13 +219,41 @@ export class QuoteService {
     }
 
     try {
-      const [quotes, total] =
+      const [quotes, totalQuery] =
         await this.quoteRepository.findAndCount(findOptions);
 
+      const { statusCounts, total } = await this.filterTotalsByQuoteStatus();
+
       return {
-        count: total,
+        count: totalQuery,
         quotes,
+        statusCounts,
+        total,
       };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  private async filterTotalsByQuoteStatus(): Promise<any> {
+    try {
+      const groupedStatusRaw = await this.quoteRepository
+        .createQueryBuilder('quote')
+        .select('quote.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('quote.status')
+        .getRawMany();
+
+      // Transform array into an object
+      const statusCounts: Record<string, number> = {};
+      let total = 0;
+      groupedStatusRaw.forEach((row) => {
+        const totalByStatus = parseInt(row.count, 10);
+        statusCounts[row.status] = totalByStatus;
+        total += totalByStatus;
+      });
+
+      return { statusCounts, total };
     } catch (error) {
       this.handleErrorOnDB(error);
     }
