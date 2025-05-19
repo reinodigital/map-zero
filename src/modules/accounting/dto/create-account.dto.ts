@@ -1,18 +1,18 @@
 import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsPositive,
   IsString,
 } from 'class-validator';
 import { TaxRateCode } from 'src/enums';
 
 export class CreateAccountDto {
   @IsNotEmpty()
+  @Type(() => Number)
   @IsNumber()
-  @IsPositive()
   accountTypeId: number;
 
   @IsNotEmpty()

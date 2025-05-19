@@ -6,13 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 
+import { AuthDecorator } from '../auth/decorators';
 import { AccountService } from './account.service';
 
-import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
-import { AuthDecorator } from '../auth/decorators';
 import { SecurityRoles } from 'src/enums';
+import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
+import { FindAllAccountsDto } from './dto/find-all-accounts.dto';
 
 @Controller('account')
 export class AccountController {
@@ -30,8 +32,8 @@ export class AccountController {
 
   @Get()
   @AuthDecorator()
-  findAll() {
-    return this.accountService.findAll();
+  findAll(@Query() findAllAccountsDto: FindAllAccountsDto) {
+    return this.accountService.findAll(findAllAccountsDto);
   }
 
   @Get(':id')

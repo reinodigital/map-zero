@@ -9,6 +9,9 @@ export class AccountType {
   @Column({ nullable: false, unique: true })
   name: string; // type of accounting, see examples below
 
+  @Column({ nullable: false })
+  category: string; // ASSETS | EQUITY | EXPENSES | Liabilities | Revenue
+
   @OneToMany(() => Account, (account) => account.accountType)
   accounts: Account[];
 }

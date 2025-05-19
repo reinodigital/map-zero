@@ -23,7 +23,8 @@ export class AccountTypeService {
   ) {}
 
   async create(createAccountTypeDto: CreateAccountTypeDto): Promise<IMessage> {
-    const { name } = createAccountTypeDto;
+    const { name, category } = createAccountTypeDto;
+
     try {
       const existAccountTypeByName = await this.accountTypeRepository.findOneBy(
         { name },
@@ -34,7 +35,10 @@ export class AccountTypeService {
         );
       }
 
-      const newAccountType = this.accountTypeRepository.create({ name });
+      const newAccountType = this.accountTypeRepository.create({
+        name,
+        category,
+      });
 
       await this.accountTypeRepository.save(newAccountType);
 
@@ -46,7 +50,9 @@ export class AccountTypeService {
 
   async findAll(): Promise<AccountType[]> {
     try {
-      return await this.accountTypeRepository.find();
+      return await this.accountTypeRepository.find({
+        order: { category: 'ASC' },
+      });
     } catch (error) {
       this.handleErrorsOnDB(error);
     }

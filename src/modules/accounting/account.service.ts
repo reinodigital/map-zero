@@ -5,13 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Like, Repository } from 'typeorm';
 
 import { Account } from './entities/account.entity';
 import { AccountType } from './entities/account-type.entity';
 
 import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
-import { IMessage } from 'src/interfaces';
+import { ICountAndAccountAll, IMessage } from 'src/interfaces';
+import { FindAllAccountsDto } from './dto/find-all-accounts.dto';
 
 @Injectable()
 export class AccountService {
@@ -68,12 +69,37 @@ export class AccountService {
     }
   }
 
-  async findAll(): Promise<Account[]> {
+  async findAll(
+    findAllAccountsDto: FindAllAccountsDto,
+  ): Promise<ICountAndAccountAll> {
+    const { limit = 10, offset = 0, name = null } = findAllAccountsDto;
+
+    const findOptions: FindManyOptions<Account> = {
+      take: limit,
+      skip: offset,
+      order: {
+        id: 'desc',
+      },
+      relations: { accountType: true },
+    };
+
+    const whereConditions: any = {};
+    if (name) {
+      whereConditions.name = Like(`%${name}%`);
+    }
+
+    if (Object.keys(whereConditions).length) {
+      findOptions.where = whereConditions;
+    }
+
     try {
-      return await this.accountRepository.find({
-        relations: ['accountType'],
-        order: { id: 'ASC' },
-      });
+      const [accounts, total] =
+        await this.accountRepository.findAndCount(findOptions);
+
+      return {
+        count: total,
+        accounts,
+      };
     } catch (error) {
       this.handleErrorsOnDB(error);
     }
