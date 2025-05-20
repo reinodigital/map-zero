@@ -72,8 +72,9 @@ export class QuoteItemDto {
   @Min(0)
   discount: number = 0;
 
-  @IsString()
-  account?: string;
+  @IsNumber()
+  @IsNotEmpty()
+  accountId: number;
 
   @IsString()
   taxRate?: string;

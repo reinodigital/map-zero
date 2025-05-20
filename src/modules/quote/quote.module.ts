@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from '../auth/auth.module';
+import { AccountModule } from '../accounting/account.module';
 import { ClientsModule } from '../client/client.module';
 import { ItemModule } from '../item/item.module';
 import { SharedModule } from '../shared/shared.module';
@@ -17,6 +18,7 @@ import { QuoteService } from './quote.service';
   imports: [
     TypeOrmModule.forFeature([Quote, QuoteItem]),
     AuthModule,
+    AccountModule,
     ClientsModule,
     ItemModule,
     SharedModule,

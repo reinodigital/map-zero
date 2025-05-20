@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { AccountType } from './account-type.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
+import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 
 @Entity('account')
 export class Account {
@@ -39,4 +40,7 @@ export class Account {
 
   @OneToMany(() => Item, (item) => item.purchaseAccount)
   itemsPurchaseAccount: Item[];
+
+  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.account)
+  quoteItems: QuoteItem[];
 }

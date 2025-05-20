@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Like, Repository } from 'typeorm';
 
 import { Auth } from '../auth/entities/auth.entity';
+import { Account } from '../accounting/entities/account.entity';
 import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
 import { Client } from '../client/entities/client.entity';
@@ -45,6 +46,9 @@ export class QuoteService {
 
     @InjectRepository(Auth)
     private readonly authRepository: Repository<Auth>,
+
+    @InjectRepository(Account)
+    private readonly accountRepository: Repository<Account>,
 
     private readonly trackingService: TrackingService,
     private readonly reportService: ReportService,
@@ -698,7 +702,7 @@ export class QuoteService {
 
     try {
       for (const quoteItem of items) {
-        const { quantity, itemId, sellerUid = null } = quoteItem;
+        const { quantity, itemId, sellerUid = null, accountId } = quoteItem;
         const itemEntity = await this.itemRepository.findOne({
           where: { id: itemId },
           relations: { cabys: true },
@@ -728,6 +732,16 @@ export class QuoteService {
           );
         }
 
+        // verify exists Account
+        const accountEntity = await this.accountRepository.findOneBy({
+          id: accountId,
+        });
+        if (!accountEntity) {
+          throw new BadRequestException(
+            `Cuenta contable con ID: ${accountId} no encontrada.`,
+          );
+        }
+
         // README: IVA is being calculated by frontend select option tax rate
         const totalWithoutIVA =
           quoteItem.discount > 0
@@ -750,7 +764,7 @@ export class QuoteService {
           discount: quoteItem.discount ?? 0,
           quantity: quoteItem.quantity,
           description: quoteItem.description,
-          account: quoteItem.account,
+          account: accountEntity,
           taxRate: quoteItem.taxRate,
         });
 
