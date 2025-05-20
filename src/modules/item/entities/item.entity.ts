@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
+import { Account } from 'src/modules/accounting/entities/account.entity';
 
 @Entity('item')
 export class Item {
@@ -20,13 +21,15 @@ export class Item {
   cabys: CabysList;
 
   // Purchase fields
-  @Column({ type: 'float', nullable: false })
-  costPrice: number;
+  @Column({ type: 'float', nullable: true, default: null })
+  costPrice?: number;
 
-  @Column({ nullable: false })
-  purchaseAccount: string; // select field example: "300 - Costo de Ventas Mercadería"
+  @ManyToOne(() => Account, (account) => account.itemsPurchaseAccount, {
+    nullable: true,
+  })
+  purchaseAccount?: Account; // select field example: "300 - Costo de Ventas Mercadería"
 
-  @Column({ nullable: false })
+  @Column({ nullable: true, default: null })
   purchaseTaxRate: string; // select field example: "Tarifa General 13%"
 
   @Column({ type: 'text', nullable: true, default: null })
@@ -37,8 +40,10 @@ export class Item {
   @Column({ type: 'float', nullable: false })
   salePrice: number;
 
-  @Column({ nullable: false })
-  saleAccount: string; // select field example: "200 -  523601 Ventas de Mercadería"
+  @ManyToOne(() => Account, (account) => account.itemsSaleAccount, {
+    nullable: false,
+  })
+  saleAccount: Account; // select field example: "200 -  523601 Ventas de Mercadería"
 
   @Column({ nullable: false })
   saleTaxRate: string; // select field example: "Tarifa General 13%"

@@ -1,5 +1,12 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { AccountType } from './account-type.entity';
+import { Item } from 'src/modules/item/entities/item.entity';
 
 @Entity('account')
 export class Account {
@@ -21,8 +28,15 @@ export class Account {
   @Column({ type: 'boolean', nullable: false, default: true })
   isActive: boolean;
 
+  // RELATIONS
   @ManyToOne(() => AccountType, (accountType) => accountType.accounts, {
     nullable: false,
   })
   accountType: AccountType;
+
+  @OneToMany(() => Item, (item) => item.saleAccount)
+  itemsSaleAccount: Item[];
+
+  @OneToMany(() => Item, (item) => item.purchaseAccount)
+  itemsPurchaseAccount: Item[];
 }

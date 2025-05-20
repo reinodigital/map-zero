@@ -1,3 +1,4 @@
+import { Account } from 'src/modules/accounting/entities/account.entity';
 import { CabysList } from 'src/modules/cabys/entities/cabys-list.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
 import { Tracking } from 'src/modules/tracking/entities/tracking.entity';
@@ -16,7 +17,7 @@ export interface IItemForSelect {
   name: string;
   cabys: CabysList;
   salePrice: number;
-  saleAccount: string;
+  saleAccount: Account;
   saleTaxRate: string;
   saleDescription?: string;
 }

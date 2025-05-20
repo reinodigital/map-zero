@@ -1,4 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -22,42 +23,48 @@ export class CreateItemDto {
   @IsNotEmpty()
   cabys: string;
 
+  // PURCHASE
+  @IsOptional()
   @IsNumber()
   @IsPositive()
-  costPrice: number;
+  costPrice?: number;
 
-  @IsString()
-  @IsNotEmpty()
-  purchaseAccount: string;
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  purchaseAccountId?: number;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @IsEnum(TaxRateCode, {
     message: `Valor de tasa de impuestos permitidos solo estos: [${Object.values(TaxRateCode)}]`,
   })
-  purchaseTaxRate: string;
+  purchaseTaxRate?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   purchaseDescription?: string;
 
+  // SALES
+  @IsNotEmpty()
   @IsNumber()
   @IsPositive()
   salePrice: number;
 
-  @IsString()
   @IsNotEmpty()
-  saleAccount: string;
+  @IsNumber()
+  @Type(() => Number)
+  saleAccountId: number;
 
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   @IsEnum(TaxRateCode, {
     message: `Valor de tasa de impuestos permitidos solo estos: ${Object.values(TaxRateCode).join(', ')}`,
   })
   saleTaxRate: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   saleDescription?: string;
 }
 

@@ -2,11 +2,13 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Like, Repository } from 'typeorm';
 
 import { Item } from './entities/item.entity';
+import { Account } from '../accounting/entities/account.entity';
 import { CabysList } from '../cabys/entities/cabys-list.entity';
 
 import { CabysService } from '../cabys/cabys.service';
@@ -22,13 +24,15 @@ import { ActionOverEntity, NameEntities } from 'src/enums';
 import { CreateItemDto, UpdateItemDto } from './dto/create-item.dto';
 import { FindAllItemsDto } from './dto/find-all-items.dto';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
-import { formatDateAsReadable } from '../shared/helpers/format-date-as-readable.helper';
 
 @Injectable()
 export class ItemService {
   constructor(
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
+
+    @InjectRepository(Account)
+    private readonly accountRepository: Repository<Account>,
 
     private cabysService: CabysService,
     private trackingService: TrackingService,
@@ -38,7 +42,14 @@ export class ItemService {
     createItemDto: CreateItemDto,
     userName: string,
   ): Promise<IMessage> {
-    const { name, createdAt, cabys, ...restItem } = createItemDto;
+    const {
+      name,
+      createdAt,
+      cabys,
+      saleAccountId,
+      purchaseAccountId = null,
+      ...restItem
+    } = createItemDto;
     try {
       // verify name or unique code
       const item = await this.itemRepository.findOneBy({ name });
@@ -51,13 +62,22 @@ export class ItemService {
       // verify and get cabys
       const cabysEntity = await this.getCabysEntity(cabys);
 
+      // validate and get accounts
+      const { purchaseAccount, saleAccount } =
+        await this.validateAndGetAccounts(saleAccountId, purchaseAccountId);
+
       // create and save new item
       const newItem = this.itemRepository.create({
         name,
         createdAt,
         cabys: cabysEntity,
+        saleAccount: saleAccount,
         ...restItem,
       });
+
+      if (purchaseAccount) {
+        newItem.purchaseAccount = purchaseAccount;
+      }
 
       const savedItem = await this.itemRepository.save(newItem);
 
@@ -89,7 +109,7 @@ export class ItemService {
           'saleAccount',
           'saleTaxRate',
         ],
-        relations: { cabys: true },
+        relations: { cabys: true, saleAccount: true },
       });
 
       return itemsForSelect;
@@ -135,7 +155,7 @@ export class ItemService {
     try {
       const item = await this.itemRepository.findOne({
         where: { id },
-        relations: { cabys: true },
+        relations: { cabys: true, saleAccount: true, purchaseAccount: true },
       });
 
       if (!item) {
@@ -162,7 +182,14 @@ export class ItemService {
     updateItemDto: UpdateItemDto,
     userName: string,
   ): Promise<IMessage> {
-    const { name, cabys, updatedAt, ...restItem } = updateItemDto;
+    const {
+      name,
+      cabys,
+      updatedAt,
+      purchaseAccountId,
+      saleAccountId,
+      ...restItem
+    } = updateItemDto;
     try {
       const item = await this.findOne(id);
 
@@ -188,6 +215,20 @@ export class ItemService {
         ...restItem,
       });
 
+      // validate and get accounts
+      if (saleAccountId || purchaseAccountId) {
+        const { purchaseAccount, saleAccount } =
+          await this.validateAndGetAccounts(
+            saleAccountId ?? item.saleAccount.id,
+            purchaseAccountId ?? item.purchaseAccount?.id ?? null,
+          );
+
+        preloadedItem!.saleAccount = saleAccount;
+        if (purchaseAccount) {
+          preloadedItem!.purchaseAccount = purchaseAccount;
+        }
+      }
+
       const updatedItem = await this.itemRepository.save(preloadedItem!);
 
       // generate tracking
@@ -212,6 +253,43 @@ export class ItemService {
   // }
 
   // ========= Helpers ===========
+  private async validateAndGetAccounts(
+    saleAccountId: number,
+    purchaseAccountId: number | null,
+  ): Promise<{ purchaseAccount: Account | null; saleAccount: Account }> {
+    try {
+      let purchaseAccount: Account | null = null;
+      // verify purchase account if come
+      if (purchaseAccountId) {
+        purchaseAccount = await this.accountRepository.findOneBy({
+          id: saleAccountId,
+        });
+        if (!purchaseAccount) {
+          throw new NotFoundException(
+            `Cuenta de compra con ID: ${purchaseAccountId} no encontrada.`,
+          );
+        }
+      }
+
+      // verify sale account
+      const saleAccount = await this.accountRepository.findOneBy({
+        id: saleAccountId,
+      });
+      if (!saleAccount) {
+        throw new NotFoundException(
+          `Cuenta de venta con ID: ${saleAccountId} no encontrada.`,
+        );
+      }
+
+      return {
+        purchaseAccount,
+        saleAccount,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
   private async getCabysEntity(cabys: string): Promise<CabysList> {
     try {
       return await this.cabysService.findOneCabys(cabys);
