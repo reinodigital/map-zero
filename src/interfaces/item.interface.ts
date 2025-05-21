@@ -16,8 +16,8 @@ export interface IItemForSelect {
   id: number;
   name: string;
   cabys: CabysList;
-  salePrice: number;
-  saleAccount: Account;
-  saleTaxRate: string;
+  salePrice?: number;
+  saleAccount?: Account;
+  saleTaxRate?: string;
   saleDescription?: string;
 }

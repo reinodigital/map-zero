@@ -46,7 +46,7 @@ export class ItemService {
       name,
       createdAt,
       cabys,
-      saleAccountId,
+      saleAccountId = null,
       purchaseAccountId = null,
       ...restItem
     } = createItemDto;
@@ -71,12 +71,15 @@ export class ItemService {
         name,
         createdAt,
         cabys: cabysEntity,
-        saleAccount: saleAccount,
         ...restItem,
       });
 
       if (purchaseAccount) {
         newItem.purchaseAccount = purchaseAccount;
+      }
+
+      if (saleAccount) {
+        newItem.saleAccount = saleAccount;
       }
 
       const savedItem = await this.itemRepository.save(newItem);
@@ -219,11 +222,13 @@ export class ItemService {
       if (saleAccountId || purchaseAccountId) {
         const { purchaseAccount, saleAccount } =
           await this.validateAndGetAccounts(
-            saleAccountId ?? item.saleAccount.id,
+            saleAccountId ?? item.saleAccount?.id ?? null,
             purchaseAccountId ?? item.purchaseAccount?.id ?? null,
           );
 
-        preloadedItem!.saleAccount = saleAccount;
+        if (saleAccount) {
+          preloadedItem!.saleAccount = saleAccount;
+        }
         if (purchaseAccount) {
           preloadedItem!.purchaseAccount = purchaseAccount;
         }
@@ -254,15 +259,15 @@ export class ItemService {
 
   // ========= Helpers ===========
   private async validateAndGetAccounts(
-    saleAccountId: number,
+    saleAccountId: number | null,
     purchaseAccountId: number | null,
-  ): Promise<{ purchaseAccount: Account | null; saleAccount: Account }> {
+  ): Promise<{ purchaseAccount: Account | null; saleAccount: Account | null }> {
     try {
-      let purchaseAccount: Account | null = null;
       // verify purchase account if come
+      let purchaseAccount: Account | null = null;
       if (purchaseAccountId) {
         purchaseAccount = await this.accountRepository.findOneBy({
-          id: saleAccountId,
+          id: purchaseAccountId,
         });
         if (!purchaseAccount) {
           throw new NotFoundException(
@@ -272,13 +277,16 @@ export class ItemService {
       }
 
       // verify sale account
-      const saleAccount = await this.accountRepository.findOneBy({
-        id: saleAccountId,
-      });
-      if (!saleAccount) {
-        throw new NotFoundException(
-          `Cuenta de venta con ID: ${saleAccountId} no encontrada.`,
-        );
+      let saleAccount: Account | null = null;
+      if (saleAccountId) {
+        saleAccount = await this.accountRepository.findOneBy({
+          id: saleAccountId,
+        });
+        if (!saleAccount) {
+          throw new NotFoundException(
+            `Cuenta de venta con ID: ${saleAccountId} no encontrada.`,
+          );
+        }
       }
 
       return {

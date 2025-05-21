@@ -271,8 +271,10 @@ export class QuoteService {
         .leftJoinAndSelect('quote.quoteItems', 'quoteItems')
         .leftJoin('quoteItems.item', 'item') // You can also use leftJoinAndSelect if needed
         .leftJoin('quoteItems.seller', 'seller')
+        .leftJoin('quoteItems.account', 'account')
         .addSelect(['item.name']) // Only select seller.name and seller.uid
         .addSelect(['seller.name', 'seller.uid']) // Only select seller.name and seller.uid
+        .addSelect(['account.name', 'account.id', 'account.code'])
         .where('quote.id = :id', { id })
         .getOne();
 

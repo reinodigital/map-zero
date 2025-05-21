@@ -30,23 +30,23 @@ export class Item {
   purchaseAccount?: Account; // select field example: "300 - Costo de Ventas Mercadería"
 
   @Column({ nullable: true, default: null })
-  purchaseTaxRate: string; // select field example: "Tarifa General 13%"
+  purchaseTaxRate?: string; // select field example: "Tarifa General 13%"
 
   @Column({ type: 'text', nullable: true, default: null })
   purchaseDescription?: string;
   // END Purchase fields
 
   // Sell fields
-  @Column({ type: 'float', nullable: false })
-  salePrice: number;
+  @Column({ type: 'float', nullable: true, default: null })
+  salePrice?: number;
 
   @ManyToOne(() => Account, (account) => account.itemsSaleAccount, {
-    nullable: false,
+    nullable: true,
   })
-  saleAccount: Account; // select field example: "200 -  523601 Ventas de Mercadería"
+  saleAccount?: Account; // select field example: "200 -  523601 Ventas de Mercadería"
 
-  @Column({ nullable: false })
-  saleTaxRate: string; // select field example: "Tarifa General 13%"
+  @Column({ nullable: true, default: null })
+  saleTaxRate?: string; // select field example: "Tarifa General 13%"
 
   @Column({ type: 'text', nullable: true, default: null })
   saleDescription?: string;
