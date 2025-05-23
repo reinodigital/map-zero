@@ -18,8 +18,8 @@ const logo: Content = {
 };
 const circle: Content = {
   image: '/usr/src/app/seed-data/map_circle.png',
-  width: 80,
-  height: 80,
+  width: 65,
+  height: 65,
   alignment: 'center',
 };
 
