@@ -31,7 +31,7 @@ export const footerSection = (
   pageCount?: number,
 ): Content => {
   return {
-    margin: [0, 30, 0, 0],
+    margin: [0, 80, 0, 0],
     table: {
       widths: ['33.33%', '33.33%', '33.33%'], // Equal widths for 4 columns
       body: [[dellPartner, microsoftPartner, lenovoPartner]],
