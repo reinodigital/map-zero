@@ -13,11 +13,14 @@ import { CabysList } from '../cabys/entities/cabys-list.entity';
 
 import { CabysService } from '../cabys/cabys.service';
 import { TrackingService } from '../tracking/tracking.service';
+import { truncateSomeString } from '../shared/helpers/truncate-string.helper';
 
 import {
+  Constants,
   ICountAndItemAll,
   IDetailItem,
   IItemForSelect,
+  IItemSuggestion,
   IMessage,
 } from 'src/interfaces';
 import { ActionOverEntity, NameEntities } from 'src/enums';
@@ -116,6 +119,55 @@ export class ItemService {
       });
 
       return itemsForSelect;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  // for custom-select items component as frontend
+  async getSuggestions(terminus: string): Promise<IItemSuggestion[]> {
+    try {
+      const findOptions: FindManyOptions<Item> = {
+        where: [
+          { name: Like(`%${terminus}%`) },
+          { cabys: { code: Like(`%${terminus}%`) } },
+          { saleDescription: Like(`%${terminus}%`) },
+        ],
+        relations: { cabys: true, saleAccount: true },
+        take: 8,
+        order: {
+          name: 'desc',
+        },
+      };
+
+      const items = await this.itemRepository.find(findOptions);
+
+      if (!items.length) {
+        return [
+          {
+            id: null,
+            name: Constants.NOT_RESULTS,
+            shortName: Constants.NOT_RESULTS,
+            cabys: Constants.NOT_RESULTS,
+            description: Constants.NOT_RESULTS,
+            salePrice: 0,
+            saleAccountId: null,
+          },
+        ];
+      }
+
+      return items.map(
+        (item) =>
+          ({
+            id: item.id,
+            name: item.name,
+            shortName: truncateSomeString(item.name),
+            cabys: item.cabys.code,
+            description: item.saleDescription,
+            salePrice: item.salePrice,
+            saleAccountId: item.saleAccount?.id ?? null,
+          }) as IItemSuggestion,
+      );
     } catch (error) {
       this.handleErrorOnDB(error);
     }

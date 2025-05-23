@@ -39,6 +39,11 @@ export class ItemController {
     return this.itemService.fetchAllForSelect();
   }
 
+  @Get('suggestions')
+  getSuggestions(@Query('terminus') terminus: string) {
+    return this.itemService.getSuggestions(terminus);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(+id);

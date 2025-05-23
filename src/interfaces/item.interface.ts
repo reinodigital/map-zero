@@ -21,3 +21,14 @@ export interface IItemForSelect {
   saleTaxRate?: string;
   saleDescription?: string;
 }
+
+export interface IItemSuggestion {
+  id: number | null;
+  name: string;
+  shortName: string;
+  cabys: string;
+  description: string;
+  salePrice: number;
+  saleAccountId: number | null;
+  // type: string | null; // in case of make it generic
+}
