@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { QuoteItem } from './quote-item.entity';
 import { StatusQuote } from 'src/enums';
+import { DecimalTransformer } from 'src/modules/shared/transformers/decimal-value.transformer';
 
 @Entity('quote')
 export class Quote {
@@ -20,7 +21,13 @@ export class Quote {
   @Column({ length: 32, nullable: false, default: 'QU-' })
   quoteNumber: string;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: false,
+    transformer: new DecimalTransformer(),
+  })
   total: number; // total to pay
 
   @Column({

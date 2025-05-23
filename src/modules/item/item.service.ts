@@ -134,7 +134,7 @@ export class ItemService {
           { saleDescription: Like(`%${terminus}%`) },
         ],
         relations: { cabys: true, saleAccount: true },
-        take: 8,
+        take: 12,
         order: {
           name: 'desc',
         },

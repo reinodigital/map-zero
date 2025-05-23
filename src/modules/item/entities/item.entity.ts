@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 import { Account } from 'src/modules/accounting/entities/account.entity';
+import { DecimalTransformer } from 'src/modules/shared/transformers/decimal-value.transformer';
 
 @Entity('item')
 export class Item {
@@ -21,7 +22,14 @@ export class Item {
   cabys: CabysList;
 
   // Purchase fields
-  @Column({ type: 'float', nullable: true, default: null })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: null,
+    transformer: new DecimalTransformer(),
+  })
   costPrice?: number;
 
   @ManyToOne(() => Account, (account) => account.itemsPurchaseAccount, {
@@ -37,7 +45,14 @@ export class Item {
   // END Purchase fields
 
   // Sell fields
-  @Column({ type: 'float', nullable: true, default: null })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: null,
+    transformer: new DecimalTransformer(),
+  })
   salePrice?: number;
 
   @ManyToOne(() => Account, (account) => account.itemsSaleAccount, {

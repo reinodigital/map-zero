@@ -17,6 +17,7 @@ import { ReportService } from '../shared/services/report.service';
 import { NodemailerService } from '../shared/services/nodemailer.service';
 
 import { getTaxRateValue } from '../shared/helpers/tax-rate';
+import { roundToTwoDecimals } from '../shared/helpers/round-two-decimals.helper';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
 import {
@@ -88,7 +89,7 @@ export class QuoteService {
         client,
         quoteItems: quoteItemsEntities,
         status,
-        total: totalToPay,
+        total: roundToTwoDecimals(totalToPay),
         ...restQuote,
       });
 
@@ -705,6 +706,7 @@ export class QuoteService {
     try {
       for (const quoteItem of items) {
         const { quantity, itemId, sellerUid = null, accountId } = quoteItem;
+        const roundedPrice = roundToTwoDecimals(quoteItem.price);
         const itemEntity = await this.itemRepository.findOne({
           where: { id: itemId },
           relations: { cabys: true },
@@ -747,11 +749,9 @@ export class QuoteService {
         // README: IVA is being calculated by frontend select option tax rate
         const totalWithoutIVA =
           quoteItem.discount > 0
-            ? +(
-                quoteItem.price -
-                (quoteItem.discount * quoteItem.price) / 100
-              ) * quantity
-            : +quoteItem.price * quantity;
+            ? +(roundedPrice - (quoteItem.discount * roundedPrice) / 100) *
+              quantity
+            : +roundedPrice * quantity;
 
         const amountLine =
           totalWithoutIVA +
@@ -761,8 +761,8 @@ export class QuoteService {
         const newQuoteItem = this.quoteItemRepository.create({
           item: itemEntity,
           seller: sellerEntity ?? null,
-          amount: amountLine,
-          price: quoteItem.price,
+          amount: roundToTwoDecimals(amountLine),
+          price: roundedPrice,
           discount: quoteItem.discount ?? 0,
           quantity: quoteItem.quantity,
           description: quoteItem.description,
@@ -773,7 +773,7 @@ export class QuoteService {
         quoteItems.push(newQuoteItem);
       }
 
-      return [quoteItems, totalAmount];
+      return [quoteItems, roundToTwoDecimals(totalAmount)];
     } catch (error) {
       this.handleErrorOnDB(error);
     }

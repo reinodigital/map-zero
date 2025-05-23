@@ -4,6 +4,7 @@ import { Auth } from 'src/modules/auth/entities/auth.entity';
 import { Account } from 'src/modules/accounting/entities/account.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
 import { Quote } from './quote.entity';
+import { DecimalTransformer } from 'src/modules/shared/transformers/decimal-value.transformer';
 
 @Entity('quote_item')
 export class QuoteItem {
@@ -16,10 +17,16 @@ export class QuoteItem {
   @Column({ type: 'int', nullable: false })
   quantity: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: false,
+    transformer: new DecimalTransformer(),
+  })
   price: number;
 
-  @Column({ type: 'float', nullable: false, default: 0 })
+  @Column({ type: 'int', nullable: false, default: 0 })
   discount: number = 0;
 
   @ManyToOne(() => Account, (account) => account.quoteItems, {
@@ -30,7 +37,13 @@ export class QuoteItem {
   @Column({ nullable: true, default: null })
   taxRate?: string; // it will be the label of type of IVA
 
-  @Column({ type: 'float', nullable: false })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: false,
+    transformer: new DecimalTransformer(),
+  })
   amount: number; // calculation with discount and IVA
 
   /* RELATIONS */
