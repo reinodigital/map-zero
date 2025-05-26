@@ -11,10 +11,11 @@ import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
 import { QuoteController } from './quote.controller';
 import { QuoteService } from './quote.service';
+import { QuoteItemService } from './quote-item.service';
 
 @Module({
   controllers: [QuoteController],
-  providers: [QuoteService],
+  providers: [QuoteService, QuoteItemService],
   imports: [
     TypeOrmModule.forFeature([Quote, QuoteItem]),
     AuthModule,

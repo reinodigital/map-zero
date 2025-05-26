@@ -44,6 +44,9 @@ export class ClientQuoteDto {
 }
 
 export class QuoteItemDto {
+  @IsOptional()
+  id?: number;
+
   @IsNotEmpty()
   @IsNumber()
   @IsPositive()
@@ -72,14 +75,15 @@ export class QuoteItemDto {
   @Min(0)
   discount: number = 0;
 
-  @IsNumber()
   @IsNotEmpty()
+  @Type(() => Number)
+  @IsNumber()
   accountId: number;
 
   @IsString()
   taxRate?: string;
 }
-export class QuoteDto {
+export class CreateQuoteDto {
   @IsNotEmpty()
   @IsString()
   createdAt: string;
@@ -128,16 +132,13 @@ export class QuoteDto {
   action: string;
 }
 
-// CREATE
-export class CreateQuoteDto {
-  @IsNotEmpty()
-  @Type(() => QuoteDto)
-  quote: QuoteDto;
-}
-
 // UPDATE
 export class UpdateQuoteDto extends PartialType(CreateQuoteDto) {
   @IsString()
   @IsNotEmpty()
   action: string;
+
+  @IsString()
+  @IsNotEmpty()
+  updatedAt: string;
 }

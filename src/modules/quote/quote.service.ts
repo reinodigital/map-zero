@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Like, Repository } from 'typeorm';
@@ -12,6 +13,7 @@ import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
 import { Client } from '../client/entities/client.entity';
 import { Item } from '../item/entities/item.entity';
+import { QuoteItemService } from './quote-item.service';
 import { TrackingService } from '../tracking/tracking.service';
 import { ReportService } from '../shared/services/report.service';
 import { NodemailerService } from '../shared/services/nodemailer.service';
@@ -51,6 +53,7 @@ export class QuoteService {
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
 
+    private readonly quoteItemService: QuoteItemService,
     private readonly trackingService: TrackingService,
     private readonly reportService: ReportService,
     private readonly nodemailerService: NodemailerService,
@@ -67,7 +70,7 @@ export class QuoteService {
       status,
       action,
       ...restQuote
-    } = createQuoteDto.quote;
+    } = createQuoteDto;
 
     try {
       // verify exists Client
@@ -300,8 +303,69 @@ export class QuoteService {
     }
   }
 
-  update(id: number, updateQuoteDto: UpdateQuoteDto) {
-    return `This action updates a #${id} quote`;
+  async update(
+    id: number,
+    updateQuoteDto: UpdateQuoteDto,
+    userName: string,
+  ): Promise<Quote> {
+    const { quoteItems = [], client, updatedAt, ...restQuote } = updateQuoteDto;
+    try {
+      const existingQuote = await this.quoteRepository.findOne({
+        where: { id },
+        relations: { client: true, quoteItems: true },
+      });
+
+      if (!existingQuote) {
+        throw new NotFoundException(`Cotización con ID ${id} no encontrada`);
+      }
+
+      // STEP 1: verify if client changed
+      let possibleNewClient: Client = existingQuote.client;
+      if (client?.id && existingQuote.client.id !== client.id) {
+        const newClient = await this.clientRepository.findOneBy({
+          id: client.id,
+        });
+        if (!newClient) {
+          throw new BadRequestException(
+            `Cliente con ID: ${client.id} no encontrado.`,
+          );
+        }
+
+        possibleNewClient = newClient;
+      }
+
+      // STEP 2: preload quote with new data
+      const preloadedQuote: Quote | undefined =
+        await this.quoteRepository.preload({
+          id,
+          ...restQuote,
+          client: possibleNewClient,
+        });
+
+      // STEP 3: synchronize quote items
+      const totalToPay = await this.quoteItemService.syncQuoteItems(
+        preloadedQuote!,
+        quoteItems,
+      );
+
+      preloadedQuote!.total = roundToTwoDecimals(totalToPay);
+
+      const savedQuote = await this.quoteRepository.save(preloadedQuote!);
+
+      // generate tracking
+      const itemTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.EDITED,
+        updatedAt,
+        `Cotización QU-${savedQuote.id} ha sido editada`,
+        savedQuote,
+      );
+      await this.trackingService.create(itemTrackingDto);
+
+      return savedQuote;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
   }
 
   async remove(
