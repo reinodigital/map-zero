@@ -2,7 +2,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'mariadb',
-  host: 'mariadb', // Put here the mysql alias container when using Docker
+  host: process.env.DB_HOST, // Put here the mysql alias container when using Docker
   port: 3306,
   database: process.env.DB_NAME,
   username: process.env.DB_USERNAME,

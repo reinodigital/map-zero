@@ -21,6 +21,10 @@ lerna-debug.log*
 /mysql-data/*
 !/mysql-data/.gitkeep
 
+# Uploads
+/uploads/*
+!/uploads/.gitkeep
+
 # OS
 .DS_Store
 

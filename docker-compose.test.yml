@@ -1,0 +1,54 @@
+version: '3.7'
+
+services:
+  map-zero:
+    container_name: ${MAP_CONTAINER_NAME:-map-server-test}
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    image: map-zero-test
+    ports:
+      - '4000:4000'
+    restart: always
+    depends_on: [mariadb]
+    environment:
+      PORT: ${PORT}
+      MARIADB_VERSION: ${MARIADB_VERSION}
+      MARIADB_CONTAINER_NAME: ${MARIADB_CONTAINER_NAME}
+      MAP_CONTAINER_NAME: ${MAP_CONTAINER_NAME}
+      DB_PORT: ${DB_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./seed-data:/usr/src/app/seed-data
+      - ./uploads:/usr/src/app/uploads
+      - ./public:/usr/src/app/public
+    networks:
+      - map_zero_testing
+
+  mariadb:
+    image: 'mariadb:${MARIADB_VERSION:-10.11.2}'
+    container_name: ${MARIADB_CONTAINER_NAME:-map-mariadb-test}
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '63400:3306'
+    restart: always
+    networks:
+      - map_zero_testing
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+
+networks:
+  map_zero_testing:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: 'false'

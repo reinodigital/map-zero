@@ -13,6 +13,7 @@ services:
     volumes:
       - ./src:/usr/src/app/src
       - ./seed-data:/usr/src/app/seed-data
+      - ./uploads:/usr/src/app/uploads
     depends_on: [mariadb]
     networks:
       mapnet:
