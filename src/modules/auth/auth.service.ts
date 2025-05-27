@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { FindManyOptions, ILike, Like, Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
 import { Auth } from './entities/auth.entity';
@@ -117,43 +117,45 @@ export class AuthService {
     } = findAllUsersDto;
 
     try {
-      const findOptions: FindManyOptions<Auth> = {
-        take: limit,
-        skip: offset,
-        select: ['uid', 'email', 'mobile', 'name', 'roles', 'isActive'],
-        order: {
-          uid: 'DESC',
-        },
-      };
+      const qb = this.authRepository
+        .createQueryBuilder('auth')
+        .where('auth.roles NOT LIKE :superAdminRole', {
+          superAdminRole: `%${SecurityRoles.SUPER_ADMIN}%`,
+        })
+        .select([
+          'auth.uid',
+          'auth.email',
+          'auth.mobile',
+          'auth.name',
+          'auth.roles',
+          'auth.isActive',
+        ])
+        .orderBy('auth.uid', 'DESC')
+        .take(limit)
+        .skip(offset);
 
-      const whereConditions: any = {};
       if (name) {
-        whereConditions.name = ILike(`%${name}%`);
+        qb.andWhere('auth.name LIKE :name', { name: `%${name}%` });
       }
 
       if (email) {
-        whereConditions.email = ILike(`%${email}%`);
+        qb.andWhere('auth.email LIKE :email', { email: `%${email}%` });
       }
 
       if (mobile) {
-        whereConditions.mobile = ILike(`%${mobile}%`);
+        qb.andWhere('auth.mobile LIKE :mobile', { mobile: `%${mobile}%` });
       }
 
       if (role) {
-        whereConditions.roles = role;
+        qb.andWhere('auth.roles LIKE :role', { role: `%${role}%` });
       }
 
       if (status) {
-        const isActive = status === 'active' ? true : false;
-        whereConditions.isActive = isActive;
+        const isActive = status === 'active';
+        qb.andWhere('auth.isActive = :isActive', { isActive });
       }
 
-      if (Object.keys(whereConditions).length) {
-        findOptions.where = whereConditions;
-      }
-
-      const [users, total] =
-        await this.authRepository.findAndCount(findOptions);
+      const [users, total] = await qb.getManyAndCount();
 
       return {
         count: total,

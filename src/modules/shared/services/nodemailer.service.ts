@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import * as path from 'path';
 import * as nodemailer from 'nodemailer';
 
 import { Quote } from 'src/modules/quote/entities/quote.entity';
@@ -18,6 +17,7 @@ export class NodemailerService {
   // Quotation
   async sendQuoteEmail(quote: Quote, dataEmail: EmailQuoteDto): Promise<void> {
     const transporter = nodemailer.createTransport({
+      // changeMe! to smtp.office365.com
       service: 'gmail', // Use your email provider
       auth: {
         user: process.env.EMAIL_USERNAME,
