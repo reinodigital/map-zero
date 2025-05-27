@@ -173,6 +173,31 @@ export class ItemService {
     }
   }
 
+  async findOneAsSuggestion(id: number): Promise<IItemSuggestion> {
+    try {
+      const item = await this.itemRepository.findOne({
+        where: { id },
+        relations: { cabys: true, saleAccount: true },
+      });
+
+      if (!item) {
+        throw new BadRequestException(`Item con ID: ${id} no encontrado.`);
+      }
+
+      return {
+        id: item.id,
+        name: item.name,
+        shortName: truncateSomeString(item.name),
+        cabys: item.cabys.code,
+        description: item.saleDescription ?? '',
+        salePrice: item.salePrice ?? 0,
+        saleAccountId: item.saleAccount?.id ?? null,
+      };
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
   async findAll(findAllItemsDto: FindAllItemsDto): Promise<ICountAndItemAll> {
     const { limit = 10, offset = 0, name = null } = findAllItemsDto;
 

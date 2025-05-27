@@ -276,7 +276,7 @@ export class QuoteService {
         .leftJoin('quoteItems.item', 'item') // You can also use leftJoinAndSelect if needed
         .leftJoin('quoteItems.seller', 'seller')
         .leftJoin('quoteItems.account', 'account')
-        .addSelect(['item.name']) // Only select seller.name and seller.uid
+        .addSelect(['item.name', 'item.id']) // Only select item.name and item.id
         .addSelect(['seller.name', 'seller.uid']) // Only select seller.name and seller.uid
         .addSelect(['account.name', 'account.id', 'account.code'])
         .where('quote.id = :id', { id })
@@ -317,6 +317,15 @@ export class QuoteService {
 
       if (!existingQuote) {
         throw new NotFoundException(`Cotización con ID ${id} no encontrada`);
+      }
+
+      const allowedStatusToEditQuote = [StatusQuote.DRAFT, StatusQuote.SENT];
+      if (
+        !allowedStatusToEditQuote.includes(existingQuote.status as StatusQuote)
+      ) {
+        throw new BadRequestException(
+          `Cotización ${existingQuote.quoteNumber} con estado ${existingQuote.status} no permite ser editada. Para editar una cotización debe de presentar uno de los estados siguientes: [${allowedStatusToEditQuote}]`,
+        );
       }
 
       // STEP 1: verify if client changed

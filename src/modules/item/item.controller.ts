@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthDecorator, GetUser } from '../auth/decorators';
 
@@ -44,15 +45,20 @@ export class ItemController {
     return this.itemService.getSuggestions(terminus);
   }
 
+  @Get('/find-one-as-suggestion/:id') // for edit quote form at frontend
+  findOneAsSuggestion(@Param('id', ParseIntPipe) id: string) {
+    return this.itemService.findOneAsSuggestion(+id);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: string) {
     return this.itemService.findOne(+id);
   }
 
   @Patch(':id')
   update(
     @GetUser(ListDataUser.name) userName: string, // decorator
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: string,
     @Body() updateItemDto: UpdateItemDto,
   ) {
     return this.itemService.update(+id, updateItemDto, userName);
