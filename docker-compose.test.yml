@@ -3,6 +3,8 @@ version: '3.7'
 services:
   map-zero:
     container_name: ${MAP_CONTAINER_NAME:-map-server-test}
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: Dockerfile.test
@@ -16,6 +18,7 @@ services:
       MARIADB_VERSION: ${MARIADB_VERSION}
       MARIADB_CONTAINER_NAME: ${MARIADB_CONTAINER_NAME}
       MAP_CONTAINER_NAME: ${MAP_CONTAINER_NAME}
+      JWT_SECRET: ${JWT_SECRET}
       DB_PORT: ${DB_PORT}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
