@@ -1,0 +1,1 @@
+import{Ib as a,Va as o,ob as s,pb as i}from"./chunk-QAVPLLNK.js";var t=class n{static \u0275fac=function(e){return new(e||n)};static \u0275cmp=o({type:n,selectors:[["sales-overview"]],decls:2,vars:0,template:function(e,l){e&1&&(s(0,"h2"),a(1,"Vista Preliminar de Ventas"),i())},encapsulation:2,changeDetection:0})};export{t as default};

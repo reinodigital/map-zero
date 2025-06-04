@@ -1,0 +1,1 @@
+import{Ib as s,Va as a,ob as n,pb as o}from"./chunk-QAVPLLNK.js";var t=class r{static \u0275fac=function(e){return new(e||r)};static \u0275cmp=a({type:r,selectors:[["detail-purchase-order"]],decls:2,vars:0,template:function(e,c){e&1&&(n(0,"p"),s(1,"detail-purchase-order works!"),o())},encapsulation:2,changeDetection:0})};export{t as default};

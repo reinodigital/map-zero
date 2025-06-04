@@ -9,3 +9,8 @@ export enum TypeCurrency {
   COLONES = 'CRC',
   USD = 'USD',
 }
+
+export enum TypeClient {
+  CLIENT = 'CLIENTE',
+  PROVIDER = 'PROVEEDOR',
+}

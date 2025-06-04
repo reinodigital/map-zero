@@ -8,7 +8,7 @@ import {
   IsString,
   Length,
 } from 'class-validator';
-import { TypeCurrency, TypeIdentity } from 'src/enums';
+import { TypeClient, TypeCurrency, TypeIdentity } from 'src/enums';
 
 export class CreateClientDto {
   @IsString()
@@ -47,6 +47,12 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsEnum(TypeClient, {
+    message: 'Tipos de contacto solo CLIENTE o PROVEEDOR',
+  })
+  type?: string;
 
   @IsString()
   @IsOptional()

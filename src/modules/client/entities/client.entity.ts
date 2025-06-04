@@ -1,9 +1,10 @@
-import { TypeCurrency, TypeIdentity } from 'src/enums';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { ClientAddress } from './client-address.entity';
 import { ClientContact } from './client-contact.entity';
 import { Quote } from 'src/modules/quote/entities/quote.entity';
+
+import { TypeClient, TypeCurrency, TypeIdentity } from 'src/enums';
 
 @Entity('client')
 export class Client {
@@ -33,6 +34,9 @@ export class Client {
 
   @Column({ length: 16, nullable: false, default: TypeIdentity.JURIDICO })
   identityType: string;
+
+  @Column({ length: 16, nullable: false, default: TypeClient.CLIENT })
+  type: string; // CLIENT | PROVIDER
 
   @Column({ nullable: false, default: true })
   isActive: boolean;
