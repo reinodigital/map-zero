@@ -4,3 +4,4 @@ export * from './common.enum';
 export * from './hacienda.enum';
 export * from './quote.enum';
 export * from './tracking.enum';
+export * from './invoice.enum';

@@ -8,6 +8,7 @@ import {
 import { AccountType } from './account-type.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
+import { InvoiceItem } from 'src/modules/invoice/entities/invoice-item.entity';
 
 @Entity('account')
 export class Account {
@@ -43,4 +44,7 @@ export class Account {
 
   @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.account)
   quoteItems: QuoteItem[];
+
+  @OneToMany(() => InvoiceItem, (invoiceItem) => invoiceItem.account)
+  invoiceItems: InvoiceItem[];
 }

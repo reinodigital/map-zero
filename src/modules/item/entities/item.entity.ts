@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 import { Account } from 'src/modules/accounting/entities/account.entity';
+import { InvoiceItem } from 'src/modules/invoice/entities/invoice-item.entity';
+
 import { DecimalTransformer } from 'src/modules/shared/transformers/decimal-value.transformer';
 
 @Entity('item')
@@ -79,4 +81,7 @@ export class Item {
 
   @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.item)
   quoteItems: QuoteItem[];
+
+  @OneToMany(() => InvoiceItem, (invoiceItem) => invoiceItem.item)
+  invoiceItems: InvoiceItem[];
 }
