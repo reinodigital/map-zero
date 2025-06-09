@@ -6,17 +6,26 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
+
 import { InvoiceService } from './invoice.service';
+import { AuthDecorator, GetUser } from '../auth/decorators';
+
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/create-invoice.dto';
+import { ListDataUser } from 'src/enums';
 
 @Controller('invoice')
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  create(@Body() createInvoiceDto: CreateInvoiceDto) {
-    return this.invoiceService.create(createInvoiceDto);
+  @AuthDecorator()
+  create(
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.invoiceService.create(createInvoiceDto, userName);
   }
 
   @Get()
@@ -25,17 +34,22 @@ export class InvoiceController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  @AuthDecorator()
+  findOne(@Param('id', ParseIntPipe) id: string) {
     return this.invoiceService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateInvoiceDto: UpdateInvoiceDto) {
-    return this.invoiceService.update(+id, updateInvoiceDto);
+  update(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateInvoiceDto: UpdateInvoiceDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.invoiceService.update(+id, updateInvoiceDto, userName);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: string) {
     return this.invoiceService.remove(+id);
   }
 }

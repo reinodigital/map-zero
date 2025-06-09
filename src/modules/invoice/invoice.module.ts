@@ -11,10 +11,11 @@ import { Invoice } from './entities/invoice.entity';
 import { InvoiceItem } from './entities/invoice-item.entity';
 import { InvoiceController } from './invoice.controller';
 import { InvoiceService } from './invoice.service';
+import { InvoiceItemService } from './invoice-item.service';
 
 @Module({
   controllers: [InvoiceController],
-  providers: [InvoiceService],
+  providers: [InvoiceService, InvoiceItemService],
   imports: [
     TypeOrmModule.forFeature([Invoice, InvoiceItem]),
     AuthModule,
