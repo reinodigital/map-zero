@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Like, Repository } from 'typeorm';
 
 import { Auth } from '../auth/entities/auth.entity';
 import { Account } from '../accounting/entities/account.entity';
@@ -22,7 +22,8 @@ import { roundToTwoDecimals } from '../shared/helpers/round-two-decimals.helper'
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
 import { ActionOverEntity, NameEntities, StatusInvoice } from 'src/enums';
-import { IDetailInvoice } from 'src/interfaces';
+import { ICountAndInvoiceAll, IDetailInvoice } from 'src/interfaces';
+import { FindAllInvoicesDto } from './dto/find-all-invoices.dto';
 
 @Injectable()
 export class InvoiceService {
@@ -91,7 +92,7 @@ export class InvoiceService {
 
     await this.invoiceRepository.update(
       { id: savedInvoice.id },
-      { invoiceNumber: `QU-${savedInvoice.id}` },
+      { invoiceNumber: `FA-${savedInvoice.id}` },
     );
 
     // generate tracking
@@ -107,8 +108,48 @@ export class InvoiceService {
     return savedInvoice;
   }
 
-  findAll() {
-    return `This action returns all invoice`;
+  async findAll(
+    findAllInvoicesDto: FindAllInvoicesDto,
+  ): Promise<ICountAndInvoiceAll> {
+    const {
+      limit = 10,
+      offset = 0,
+      status = null,
+      invoiceNumber = null,
+    } = findAllInvoicesDto;
+
+    const findOptions: FindManyOptions<Invoice> = {
+      take: limit,
+      skip: offset,
+      order: {
+        id: 'desc',
+      },
+      relations: { client: true },
+    };
+
+    const whereConditions: any = {};
+    if (status) {
+      whereConditions.status = status;
+    }
+    if (invoiceNumber) {
+      whereConditions.invoiceNumber = Like(`%${invoiceNumber}%`);
+    }
+
+    if (Object.keys(whereConditions).length) {
+      findOptions.where = whereConditions;
+    }
+
+    const [invoices, totalQuery] =
+      await this.invoiceRepository.findAndCount(findOptions);
+
+    const { statusCounts, total } = await this.filterTotalsByInvoiceStatus();
+
+    return {
+      count: totalQuery,
+      invoices,
+      statusCounts,
+      total,
+    };
   }
 
   async findOne(id: number): Promise<IDetailInvoice> {
@@ -240,5 +281,25 @@ export class InvoiceService {
     };
 
     return newTracking;
+  }
+
+  private async filterTotalsByInvoiceStatus(): Promise<any> {
+    const groupedStatusRaw = await this.invoiceRepository
+      .createQueryBuilder('invoice')
+      .select('invoice.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('invoice.status')
+      .getRawMany();
+
+    // Transform array into an object
+    const statusCounts: Record<string, number> = {};
+    let total = 0;
+    groupedStatusRaw.forEach((row) => {
+      const totalByStatus = parseInt(row.count, 10);
+      statusCounts[row.status] = totalByStatus;
+      total += totalByStatus;
+    });
+
+    return { statusCounts, total };
   }
 }

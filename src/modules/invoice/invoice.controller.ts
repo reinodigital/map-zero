@@ -7,12 +7,14 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 
 import { InvoiceService } from './invoice.service';
 import { AuthDecorator, GetUser } from '../auth/decorators';
 
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/create-invoice.dto';
+import { FindAllInvoicesDto } from './dto/find-all-invoices.dto';
 import { ListDataUser } from 'src/enums';
 
 @Controller('invoice')
@@ -29,8 +31,9 @@ export class InvoiceController {
   }
 
   @Get()
-  findAll() {
-    return this.invoiceService.findAll();
+  @AuthDecorator()
+  findAll(@Query() findAllInvoicesDto: FindAllInvoicesDto) {
+    return this.invoiceService.findAll(findAllInvoicesDto);
   }
 
   @Get(':id')
@@ -40,6 +43,7 @@ export class InvoiceController {
   }
 
   @Patch(':id')
+  @AuthDecorator()
   update(
     @Param('id', ParseIntPipe) id: string,
     @Body() updateInvoiceDto: UpdateInvoiceDto,

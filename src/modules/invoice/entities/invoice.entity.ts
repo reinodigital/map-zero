@@ -24,7 +24,7 @@ export class Invoice {
   invoiceNumber: string;
 
   @Column({ length: 64, nullable: true, default: null })
-  reference?: string; // QU-XXX
+  reference?: string; // FA-XXX
 
   @Column({
     type: 'decimal',
