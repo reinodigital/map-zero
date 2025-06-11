@@ -19,21 +19,17 @@ export class TrackingService {
   ) {}
 
   // CREATE TRACKING
-  async create(createTrackingDto: CreateTrackingDto): Promise<void> {
+  async create(createTrackingDto: CreateTrackingDto): Promise<Tracking> {
     const { refEntity, refEntityId } = createTrackingDto;
 
-    try {
-      // verify entity exists
-      await this.verifyOneTrack(refEntity, refEntityId);
+    // verify entity exists
+    await this.verifyOneTrack(refEntity, refEntityId);
 
-      const newTracking = this.trackingRepository.create({
-        ...createTrackingDto,
-      });
+    const newTracking = this.trackingRepository.create({
+      ...createTrackingDto,
+    });
 
-      await this.trackingRepository.save(newTracking);
-    } catch (error) {
-      this.handleErrorOnDB(error);
-    }
+    return await this.trackingRepository.save(newTracking);
   }
 
   // VERIFY ONE ROW EXISTS ON ENTITY
