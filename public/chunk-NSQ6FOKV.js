@@ -1,1 +1,0 @@
-import{Ib as c,Va as i,ob as o,pb as a}from"./chunk-QAVPLLNK.js";var t=class n{static \u0275fac=function(e){return new(e||n)};static \u0275cmp=i({type:n,selectors:[["detail-invoice"]],decls:2,vars:0,template:function(e,l){e&1&&(o(0,"p"),c(1,"detail-invoice works!"),a())},encapsulation:2,changeDetection:0})};export{t as default};

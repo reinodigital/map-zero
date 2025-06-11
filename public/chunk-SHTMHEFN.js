@@ -1,1 +1,0 @@
-import{Ib as c,Va as i,ob as o,pb as s}from"./chunk-QAVPLLNK.js";var t=class n{static \u0275fac=function(e){return new(e||n)};static \u0275cmp=i({type:n,selectors:[["list-invoices"]],decls:2,vars:0,template:function(e,m){e&1&&(o(0,"h2"),c(1,"Vista Listado Facturas"),s())},encapsulation:2,changeDetection:0})};export{t as default};
