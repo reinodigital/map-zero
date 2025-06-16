@@ -6,6 +6,7 @@ import { AccountModule } from '../accounting/account.module';
 import { ClientsModule } from '../client/client.module';
 import { ItemModule } from '../item/item.module';
 import { SharedModule } from '../shared/shared.module';
+import { InvoiceModule } from '../invoice/invoice.module';
 
 import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
@@ -22,6 +23,7 @@ import { QuoteItemService } from './quote-item.service';
     AccountModule,
     ClientsModule,
     ItemModule,
+    InvoiceModule,
     SharedModule,
   ],
   exports: [TypeOrmModule],

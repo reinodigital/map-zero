@@ -22,7 +22,10 @@ import {
 } from './dto/create-quote.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
 import { UpdateQuoteStatusDto } from './dto/update-quote-status.dto';
-import { CopyToQuoteDto } from './dto/copy-to-quote.dto';
+import {
+  CopyToQuoteDto,
+  CreateInvoiceFromQuoteDto,
+} from './dto/copy-to-quote.dto';
 import { ListDataUser } from 'src/enums';
 
 @Controller('quote')
@@ -37,6 +40,21 @@ export class QuoteController {
     @GetUser(ListDataUser.name) userName: string,
   ) {
     return this.quoteService.sendEmailQuote(+quoteId, emailQuoteDto, userName);
+  }
+
+  // it is called from two places at frontend 1- copyTo action modal-user select Invoice 2-an accepted quote is wanted to be invoiced
+  @Post('copy-to-invoice/:quoteId')
+  @AuthDecorator()
+  copyToInvoice(
+    @Param('quoteId', ParseIntPipe) quoteId: string,
+    @Body() createInvoiceFromQuoteDto: CreateInvoiceFromQuoteDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.copyToInvoice(
+      +quoteId,
+      userName,
+      createInvoiceFromQuoteDto,
+    );
   }
 
   @Post('copy-to-draft/:quoteId')

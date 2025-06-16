@@ -1,7 +1,7 @@
 export enum ActionOverEntity {
   NOTE = 'nota',
   CREATED = 'creado',
-  REFERENCED = 'referenciada',
+  COPIED = 'copiada',
   EDITED = 'editado',
   SENT = 'enviado',
   ACCEPTED = 'aceptado',

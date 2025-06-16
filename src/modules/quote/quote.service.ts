@@ -12,11 +12,14 @@ import { Account } from '../accounting/entities/account.entity';
 import { Quote } from './entities/quote.entity';
 import { QuoteItem } from './entities/quote-item.entity';
 import { Client } from '../client/entities/client.entity';
+import { Invoice } from '../invoice/entities/invoice.entity';
 import { Item } from '../item/entities/item.entity';
+
 import { QuoteItemService } from './quote-item.service';
 import { TrackingService } from '../tracking/tracking.service';
 import { ReportService } from '../shared/services/report.service';
 import { NodemailerService } from '../shared/services/nodemailer.service';
+import { InvoiceService } from '../invoice/invoice.service';
 
 import { getTaxRateValue } from '../shared/helpers/tax-rate';
 import { roundToTwoDecimals } from '../shared/helpers/round-two-decimals.helper';
@@ -29,8 +32,18 @@ import {
   UpdateQuoteDto,
 } from './dto/create-quote.dto';
 import { UpdateQuoteStatusDto } from './dto/update-quote-status.dto';
-import { ActionOverEntity, NameEntities, StatusQuote } from 'src/enums';
+import {
+  ActionOverEntity,
+  NameEntities,
+  StatusInvoice,
+  StatusQuote,
+} from 'src/enums';
 import { ICountAndQuoteAll, IDetailQuote, IMessage } from 'src/interfaces';
+import {
+  CreateInvoiceDto,
+  InvoiceItemDto,
+} from '../invoice/dto/create-invoice.dto';
+import { CreateInvoiceFromQuoteDto } from './dto/copy-to-quote.dto';
 
 @Injectable()
 export class QuoteService {
@@ -55,6 +68,7 @@ export class QuoteService {
 
     private readonly quoteItemService: QuoteItemService,
     private readonly trackingService: TrackingService,
+    private readonly invoiceService: InvoiceService,
     private readonly reportService: ReportService,
     private readonly nodemailerService: NodemailerService,
   ) {}
@@ -162,16 +176,96 @@ export class QuoteService {
 
     const newDraftQuote = await this.create(createDraftQuoteDto, userName);
 
-    const itemTrackingDto = this.generateTracking(
+    const quoteTrackingDto = this.generateTracking(
       userName,
-      ActionOverEntity.REFERENCED,
+      ActionOverEntity.COPIED,
       createdAt,
-      `Cotización con referencia de ${existingQuote.quoteNumber}`,
+      `Cotización copiada de ${existingQuote.quoteNumber}`,
       newDraftQuote,
     );
-    await this.trackingService.create(itemTrackingDto);
+    await this.trackingService.create(quoteTrackingDto);
 
     return newDraftQuote;
+  }
+
+  async copyToInvoice(
+    quoteId: number,
+    userName: string,
+    createInvoiceFromQuoteDto: CreateInvoiceFromQuoteDto,
+  ): Promise<Invoice> {
+    const { createdAt, markAsInvoiced = null } = createInvoiceFromQuoteDto;
+
+    const existingQuote = await this.quoteRepository.findOne({
+      where: { id: quoteId },
+      relations: {
+        client: true,
+        quoteItems: { item: true, seller: true, account: true },
+      },
+    });
+
+    if (!existingQuote) {
+      throw new NotFoundException(
+        `Cotización con ID: ${quoteId} no encontrada`,
+      );
+    }
+
+    const newInvoiceItemDtos: InvoiceItemDto[] = existingQuote.quoteItems.map(
+      (item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+        taxRate: item.taxRate,
+        amount: item.amount,
+        accountId: item.account.id,
+        itemId: item.item.id,
+      }),
+    );
+
+    const createInvoiceDto: CreateInvoiceDto = {
+      client: existingQuote.client,
+      status: StatusInvoice.DRAFT,
+      createdAt,
+      initDate: existingQuote.initDate?.toISOString(),
+      expireDate: existingQuote.expireDate?.toISOString(),
+      invoiceItems: newInvoiceItemDtos,
+      action: ActionOverEntity.CREATED,
+      currency: existingQuote.currency,
+      reference: existingQuote.quoteNumber,
+    };
+
+    const newInvoice = await this.invoiceService.create(
+      createInvoiceDto,
+      userName,
+    );
+
+    const invoiceTrackingDto = this.invoiceService.generateTracking(
+      userName,
+      ActionOverEntity.COPIED,
+      createdAt,
+      `Factura copiada de ${existingQuote.quoteNumber}`,
+      newInvoice,
+    );
+    await this.trackingService.create(invoiceTrackingDto);
+
+    // from an accepted quote is wanted to create invoice draft
+    if (markAsInvoiced) {
+      this.quoteRepository.update(
+        { id: existingQuote.id },
+        { status: StatusQuote.INVOICED },
+      );
+
+      const quoteTrackingDto = this.generateTracking(
+        userName,
+        ActionOverEntity.CHANGE_STATUS,
+        createdAt,
+        `Cotización marcada como ${StatusQuote.INVOICED}`,
+        existingQuote,
+      );
+      await this.trackingService.create(quoteTrackingDto);
+    }
+
+    return newInvoice;
   }
 
   public async sendEmailQuote(

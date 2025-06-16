@@ -24,6 +24,6 @@ import { InvoiceItemService } from './invoice-item.service';
     ItemModule,
     SharedModule,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, InvoiceService],
 })
 export class InvoiceModule {}

@@ -264,7 +264,7 @@ export class InvoiceService {
     return `This action removes a #${id} invoice`;
   }
 
-  private generateTracking(
+  public generateTracking(
     userName: string,
     action: ActionOverEntity,
     date: string,
