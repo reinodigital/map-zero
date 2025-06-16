@@ -22,6 +22,7 @@ import {
 } from './dto/create-quote.dto';
 import { FindAllQuotesDto } from './dto/find-all-quotes.dto';
 import { UpdateQuoteStatusDto } from './dto/update-quote-status.dto';
+import { CopyToQuoteDto } from './dto/copy-to-quote.dto';
 import { ListDataUser } from 'src/enums';
 
 @Controller('quote')
@@ -36,6 +37,20 @@ export class QuoteController {
     @GetUser(ListDataUser.name) userName: string,
   ) {
     return this.quoteService.sendEmailQuote(+quoteId, emailQuoteDto, userName);
+  }
+
+  @Post('copy-to-draft/:quoteId')
+  @AuthDecorator()
+  copyToQuote(
+    @Param('quoteId', ParseIntPipe) quoteId: string,
+    @Body() copyToQuoteDto: CopyToQuoteDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.quoteService.copyToDraftQuote(
+      +quoteId,
+      userName,
+      copyToQuoteDto.createdAt,
+    );
   }
 
   @Post()

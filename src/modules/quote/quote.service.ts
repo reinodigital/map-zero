@@ -72,51 +72,106 @@ export class QuoteService {
       ...restQuote
     } = createQuoteDto;
 
-    try {
-      // verify exists Client
-      const client = await this.clientRepository.findOneBy({
-        id: clientDto.id,
-      });
-      if (!client) {
-        throw new BadRequestException(
-          `Cliente con ID: ${clientDto.id} no encontrado.`,
-        );
-      }
-
-      // create quote-items and amount
-      const [quoteItemsEntities, totalToPay] =
-        await this.createQuoteItems(quoteItems);
-
-      // create quote
-      const newQuote = this.quoteRepository.create({
-        client,
-        quoteItems: quoteItemsEntities,
-        status,
-        total: roundToTwoDecimals(totalToPay),
-        ...restQuote,
-      });
-
-      const savedQuote = await this.quoteRepository.save(newQuote);
-
-      await this.quoteRepository.update(
-        { id: savedQuote.id },
-        { quoteNumber: `QU-${savedQuote.id}` },
+    // verify exists Client
+    const client = await this.clientRepository.findOneBy({
+      id: clientDto.id,
+    });
+    if (!client) {
+      throw new BadRequestException(
+        `Cliente con ID: ${clientDto.id} no encontrado.`,
       );
-
-      // generate tracking
-      const itemTrackingDto = this.generateTracking(
-        userName,
-        ActionOverEntity.CREATED,
-        createdAt,
-        `Cotización QU-${savedQuote.id} creada con estado ${status}`,
-        savedQuote,
-      );
-      await this.trackingService.create(itemTrackingDto);
-
-      return savedQuote;
-    } catch (error) {
-      this.handleErrorOnDB(error);
     }
+
+    // create quote-items and amount
+    const [quoteItemsEntities, totalToPay] =
+      await this.createQuoteItems(quoteItems);
+
+    // create quote
+    const newQuote = this.quoteRepository.create({
+      client,
+      quoteItems: quoteItemsEntities,
+      status,
+      total: roundToTwoDecimals(totalToPay),
+      ...restQuote,
+    });
+
+    const savedQuote = await this.quoteRepository.save(newQuote);
+
+    await this.quoteRepository.update(
+      { id: savedQuote.id },
+      { quoteNumber: `QU-${savedQuote.id}` },
+    );
+
+    // generate tracking
+    const itemTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.CREATED,
+      createdAt,
+      `Cotización QU-${savedQuote.id} creada con estado ${status}`,
+      savedQuote,
+    );
+    await this.trackingService.create(itemTrackingDto);
+
+    return savedQuote;
+  }
+
+  async copyToDraftQuote(
+    quoteId: number,
+    userName: string,
+    createdAt: string,
+  ): Promise<Quote> {
+    const existingQuote = await this.quoteRepository.findOne({
+      where: { id: quoteId },
+      relations: {
+        client: true,
+        quoteItems: { item: true, seller: true, account: true },
+      },
+    });
+
+    if (!existingQuote) {
+      throw new NotFoundException(
+        `Cotización con ID: ${quoteId} no encontrada`,
+      );
+    }
+
+    const newQuoteItemDtos: QuoteItemDto[] = existingQuote.quoteItems.map(
+      (item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        taxRate: item.taxRate,
+        itemId: item.item.id,
+        sellerUid: item.seller?.uid ?? null,
+        accountId: item.account.id,
+        price: item.price,
+        discount: item.discount,
+        amount: item.amount,
+      }),
+    );
+
+    const createDraftQuoteDto: CreateQuoteDto = {
+      client: existingQuote.client,
+      status: StatusQuote.DRAFT,
+      createdAt,
+      initDate: existingQuote.initDate?.toISOString(),
+      expireDate: existingQuote.expireDate?.toISOString(),
+      quoteItems: newQuoteItemDtos,
+      action: ActionOverEntity.CREATED,
+      currency: existingQuote.currency,
+      terms: existingQuote.terms,
+    };
+
+    const newDraftQuote = await this.create(createDraftQuoteDto, userName);
+
+    const itemTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.REFERENCED,
+      createdAt,
+      `Cotización con referencia de ${existingQuote.quoteNumber}`,
+      newDraftQuote,
+    );
+    await this.trackingService.create(itemTrackingDto);
+
+    return newDraftQuote;
   }
 
   public async sendEmailQuote(
