@@ -1,5 +1,13 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
+import { Activity } from 'src/modules/economic-activities/entities/activity.entity';
 import { ClientAddress } from './client-address.entity';
 import { ClientContact } from './client-contact.entity';
 import { Quote } from 'src/modules/quote/entities/quote.entity';
@@ -66,4 +74,18 @@ export class Client {
 
   @OneToMany(() => Invoice, (invoice) => invoice.client)
   invoices?: Invoice[];
+
+  @ManyToMany(() => Activity, (activity) => activity.clients)
+  @JoinTable({
+    name: 'client_activity', // Name of the junction table
+    joinColumn: {
+      name: 'clientId', // Name of the column referencing Client entity
+      referencedColumnName: 'id', // Name of the referenced column in Client entity
+    },
+    inverseJoinColumn: {
+      name: 'activityId', // Name of the column referencing Activity entity
+      referencedColumnName: 'id', // Name of the referenced column in Activity entity
+    },
+  })
+  activities: Activity[];
 }

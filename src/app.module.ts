@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigDB } from './db/config';
 
 import { AuthModule } from './modules/auth/auth.module';
+import { ActivityModule } from './modules/economic-activities/activity.module';
 import { AccountModule } from './modules/accounting/account.module';
 import { CabysModule } from './modules/cabys/cabys.module';
 import { ClientsModule } from './modules/client/client.module';
@@ -41,6 +42,7 @@ import { TrackingModule } from './modules/tracking/tracking.module';
 
     AuthModule,
     AccountModule,
+    ActivityModule,
     CabysModule,
     ClientsModule,
     ItemModule,

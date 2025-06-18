@@ -20,4 +20,10 @@ export class SeedController {
     // return 'Todos los Cabys ya fueron creados anteriormente.';
     return this.seedService.createCabysList();
   }
+
+  @Post('/activities-list')
+  @AuthDecorator(SecurityRoles.SUPER_ADMIN)
+  createEconomicActivities() {
+    return this.seedService.createEconomicActivities();
+  }
 }
