@@ -9,7 +9,7 @@ export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
   // Activities SUGGESTIONS
-  @Get('/search-activity/:term')
+  @Get('/search-activities/:term')
   suggestions(
     @Param('term') term: string,
     @Query() simplePaginationDto: SimplePaginationDto,

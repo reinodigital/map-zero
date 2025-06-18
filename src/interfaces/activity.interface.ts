@@ -9,8 +9,3 @@ export interface ActivitySuggestion {
   name: string | null;
   description: string | null;
 }
-
-export interface IObjectSeedActivity {
-  actividad: string;
-  descripcion: string;
-}

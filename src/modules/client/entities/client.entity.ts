@@ -75,7 +75,9 @@ export class Client {
   @OneToMany(() => Invoice, (invoice) => invoice.client)
   invoices?: Invoice[];
 
-  @ManyToMany(() => Activity, (activity) => activity.clients)
+  @ManyToMany(() => Activity, (activity) => activity.clients, {
+    cascade: ['insert', 'update'],
+  })
   @JoinTable({
     name: 'client_activity', // Name of the junction table
     joinColumn: {

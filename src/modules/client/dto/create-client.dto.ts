@@ -1,5 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
+  IsArray,
   IsEmail,
   IsEnum,
   IsIn,
@@ -7,8 +10,19 @@ import {
   IsOptional,
   IsString,
   Length,
+  ValidateNested,
 } from 'class-validator';
 import { TypeClient, TypeCurrency, TypeIdentity } from 'src/enums';
+
+export class SelectedActivityDto {
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
 
 export class CreateClientDto {
   @IsString()
@@ -57,6 +71,12 @@ export class CreateClientDto {
   @IsString()
   @IsOptional()
   defaultSeller?: string;
+
+  @IsArray()
+  @ArrayMinSize(0)
+  @ValidateNested({ each: true })
+  @Type(() => SelectedActivityDto)
+  activities: SelectedActivityDto[];
 }
 
 export class UpdateClientDto extends PartialType(CreateClientDto) {

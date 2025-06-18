@@ -6,11 +6,16 @@ import {
 import { FindManyOptions, Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { Activity } from '../economic-activities/entities/activity.entity';
 import { Client } from './entities/client.entity';
 import { TrackingService } from '../tracking/tracking.service';
-import { formatDateAsReadable } from '../shared/helpers/format-date-as-readable.helper';
+import { ActivityService } from '../economic-activities/activity.service';
 
-import { CreateClientDto, UpdateClientDto } from './dto/create-client.dto';
+import {
+  CreateClientDto,
+  SelectedActivityDto,
+  UpdateClientDto,
+} from './dto/create-client.dto';
 import { FindAllClientsDto } from './dto/find-all-clients.dto';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
 import { ICountAndClientAll, IDetailClient, IMessage } from 'src/interfaces';
@@ -23,13 +28,20 @@ export class ClientsService {
     private readonly clientRepository: Repository<Client>,
 
     private readonly trackingService: TrackingService,
+    private readonly activityService: ActivityService,
   ) {}
 
   async create(
     createClientDto: CreateClientDto,
     userName: string,
   ): Promise<IMessage> {
-    const { name, email, createdAt, ...restClient } = createClientDto;
+    const {
+      name,
+      email,
+      createdAt,
+      activities = [],
+      ...restClient
+    } = createClientDto;
 
     try {
       const existsClientWithName = await this.clientRepository.findOneBy({
@@ -48,10 +60,14 @@ export class ClientsService {
         );
       }
 
+      const activityEntities =
+        await this.validateAndGetActivitiesEntities(activities);
+
       const newClient = this.clientRepository.create({
         name,
         email,
         createdAt,
+        activities: activityEntities,
         ...restClient,
       });
 
@@ -141,7 +157,7 @@ export class ClientsService {
     try {
       const client = await this.clientRepository.findOne({
         where: { id },
-        relations: { addresses: true, contacts: true },
+        relations: { addresses: true, contacts: true, activities: true },
       });
       if (!client) {
         throw new BadRequestException(`Cliente con ID: ${id} no encontrado.`);
@@ -180,7 +196,14 @@ export class ClientsService {
     updateClientDto: UpdateClientDto,
     userName: string,
   ): Promise<IMessage> {
-    const { name, email, isActive, updatedAt, ...restClient } = updateClientDto;
+    const {
+      name,
+      email,
+      isActive,
+      updatedAt,
+      activities = [],
+      ...restClient
+    } = updateClientDto;
 
     try {
       const oldClient = await this.findOne(id);
@@ -212,10 +235,14 @@ export class ClientsService {
         }
       }
 
+      const activityEntities =
+        await this.validateAndGetActivitiesEntities(activities);
+
       const updatedClient = await this.clientRepository.preload({
         id,
         name,
         email,
+        activities: activityEntities,
         isActive: activeStatus,
         ...restClient,
       });
@@ -265,6 +292,20 @@ export class ClientsService {
     };
 
     return newTracking;
+  }
+
+  private async validateAndGetActivitiesEntities(
+    activitiesDto: SelectedActivityDto[],
+  ): Promise<Activity[]> {
+    const arrActivityEntities: Activity[] = [];
+    for (const activity of activitiesDto) {
+      const existingActivity = await this.activityService.findOne(
+        activity.code,
+      );
+      arrActivityEntities.push(existingActivity);
+    }
+
+    return arrActivityEntities;
   }
 
   private handleErrorOnDB(err: any): never {

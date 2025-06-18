@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from '../auth/auth.module';
+import { ActivityModule } from '../economic-activities/activity.module';
 import { ClientsController } from './client.controller';
 import { ClientAddressController } from './client-address.controller';
 import { ClientContactController } from './client-contact.controller';
@@ -23,6 +24,7 @@ import { ClientContact } from './entities/client-contact.entity';
   imports: [
     TypeOrmModule.forFeature([Client, ClientAddress, ClientContact]),
     AuthModule,
+    ActivityModule,
   ],
   exports: [TypeOrmModule],
 })
