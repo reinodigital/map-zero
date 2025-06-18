@@ -5,15 +5,21 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsPositive,
   IsString,
 } from 'class-validator';
-import { TaxRateCode } from 'src/enums';
+import { TaxRateCode, TypeItem } from 'src/enums';
 
 export class CreateItemDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsEnum(TypeItem, {
+    message: `Tipo de item permitido solo estos dos [${Object.values(TypeItem)}]`,
+  })
+  type: string;
 
   @IsString()
   @IsNotEmpty()

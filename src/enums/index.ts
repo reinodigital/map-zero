@@ -5,3 +5,4 @@ export * from './hacienda.enum';
 export * from './quote.enum';
 export * from './tracking.enum';
 export * from './invoice.enum';
+export * from './item.enum';

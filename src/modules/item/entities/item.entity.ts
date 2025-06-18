@@ -11,6 +11,7 @@ import { Account } from 'src/modules/accounting/entities/account.entity';
 import { InvoiceItem } from 'src/modules/invoice/entities/invoice-item.entity';
 
 import { DecimalTransformer } from 'src/modules/shared/transformers/decimal-value.transformer';
+import { TypeItem } from 'src/enums';
 
 @Entity('item')
 export class Item {
@@ -19,6 +20,9 @@ export class Item {
 
   @Column({ nullable: false, unique: true })
   name: string; // could be product or service code, example: "N454LEN56"
+
+  @Column({ length: 16, nullable: false, default: TypeItem.PRODUCT })
+  type: string; // Producto || Servicio
 
   @ManyToOne(() => CabysList, (cabys) => cabys.items, { nullable: false })
   cabys: CabysList;
