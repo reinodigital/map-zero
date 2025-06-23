@@ -10,6 +10,7 @@ import { Activity } from '../economic-activities/entities/activity.entity';
 import { Client } from './entities/client.entity';
 import { TrackingService } from '../tracking/tracking.service';
 import { ActivityService } from '../economic-activities/activity.service';
+import { truncateSomeString } from '../shared/helpers/truncate-string.helper';
 
 import {
   CreateClientDto,
@@ -18,7 +19,12 @@ import {
 } from './dto/create-client.dto';
 import { FindAllClientsDto } from './dto/find-all-clients.dto';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
-import { ICountAndClientAll, IDetailClient, IMessage } from 'src/interfaces';
+import {
+  IClientEconomicActivity,
+  ICountAndClientAll,
+  IDetailClient,
+  IMessage,
+} from 'src/interfaces';
 import { ActionOverEntity, NameEntities } from 'src/enums';
 
 @Injectable()
@@ -96,6 +102,30 @@ export class ClientsService {
       });
 
       return clients;
+    } catch (error) {
+      this.handleErrorOnDB(error);
+    }
+  }
+
+  async findEconomicActivities(
+    clientId: number,
+  ): Promise<IClientEconomicActivity[]> {
+    try {
+      const client = await this.clientRepository.findOne({
+        where: { id: clientId },
+        relations: { activities: true },
+      });
+
+      if (!client) {
+        throw new BadRequestException(
+          `Cliente con ID: ${clientId} no encontrado.`,
+        );
+      }
+
+      return client.activities.map((activity) => ({
+        label: `${activity.code} - ${truncateSomeString(activity.name, 40)}`,
+        code: activity.code,
+      })) as IClientEconomicActivity[];
     } catch (error) {
       this.handleErrorOnDB(error);
     }

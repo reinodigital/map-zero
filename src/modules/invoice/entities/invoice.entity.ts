@@ -61,6 +61,12 @@ export class Invoice {
   @Column({ type: 'boolean', nullable: false, default: true })
   isActive: boolean;
 
+  @Column({ nullable: true, default: null })
+  emisorActivities?: string; // will contain the activities apply to this invoice for emisor as string separated by comma
+
+  @Column({ nullable: true, default: null })
+  receptorActivities?: string; // will contain the activities apply to this invoice for that client as string separated by comma
+
   // Relations
   @ManyToOne(() => Client, (client) => client.invoices, { nullable: false })
   client: Client;

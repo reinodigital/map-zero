@@ -9,3 +9,8 @@ export interface ActivitySuggestion {
   name: string | null;
   description: string | null;
 }
+
+export interface IClientEconomicActivity {
+  label: string;
+  code: string;
+}

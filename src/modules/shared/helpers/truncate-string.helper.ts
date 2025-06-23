@@ -1,7 +1,10 @@
-export const truncateSomeString = (name: string | null): string => {
+export const truncateSomeString = (
+  name: string | null,
+  length: number = 23,
+): string => {
   if (!name) {
     return '';
   }
 
-  return name.length > 23 ? name.slice(0, 22) + '...' : name;
+  return name.length > length ? name.slice(0, length - 1) + '...' : name;
 };

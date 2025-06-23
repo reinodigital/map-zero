@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthDecorator, GetUser } from 'src/modules/auth/decorators';
 import { ClientsService } from './client.service';
@@ -39,6 +40,12 @@ export class ClientsController {
   }
 
   @AuthDecorator()
+  @Get('find-economic-activities/:id')
+  findEconomicActivities(@Param('id', ParseIntPipe) clientId: string) {
+    return this.clientsService.findEconomicActivities(+clientId);
+  }
+
+  @AuthDecorator()
   @Get()
   findAll(@Query() findAllClientsDto: FindAllClientsDto) {
     return this.clientsService.findAll(findAllClientsDto);
@@ -46,7 +53,7 @@ export class ClientsController {
 
   @AuthDecorator()
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: string) {
     return this.clientsService.findOneEndpoint(+id);
   }
 
