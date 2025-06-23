@@ -225,6 +225,7 @@ export class QuoteService {
     const createInvoiceDto: CreateInvoiceDto = {
       client: existingQuote.client,
       status: StatusInvoice.DRAFT,
+      receptorActivities: [],
       createdAt,
       initDate: existingQuote.initDate?.toISOString(),
       expireDate: existingQuote.expireDate?.toISOString(),

@@ -60,6 +60,7 @@ export class InvoiceService {
       createdAt,
       client: clientDto,
       invoiceItems,
+      receptorActivities = [],
       status,
       action,
       ...restInvoice
@@ -82,6 +83,7 @@ export class InvoiceService {
     // create invoice
     const newInvoice = this.invoiceRepository.create({
       client,
+      receptorActivities: receptorActivities.join(','),
       invoiceItems: invoiceItemsEntities,
       status,
       total: roundToTwoDecimals(totalToPay),
@@ -173,6 +175,12 @@ export class InvoiceService {
     // fetch trackings
     const result: IDetailInvoice = {
       ...invoice,
+      emisorActivities: invoice.emisorActivities
+        ? invoice.emisorActivities.split(',')
+        : [],
+      receptorActivities: invoice.receptorActivities
+        ? invoice.receptorActivities.split(',')
+        : [],
       tracking: await this.trackingService.fetchTrackings(
         NameEntities.INVOICE,
         id,
@@ -191,6 +199,7 @@ export class InvoiceService {
       invoiceItems = [],
       client,
       updatedAt,
+      receptorActivities = [],
       ...restInvoice
     } = updateInvoiceDto;
 
@@ -234,6 +243,7 @@ export class InvoiceService {
       await this.invoiceRepository.preload({
         id,
         ...restInvoice,
+        receptorActivities: receptorActivities.join(','),
         client: possibleNewClient,
       });
 

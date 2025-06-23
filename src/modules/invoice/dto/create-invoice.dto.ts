@@ -92,6 +92,10 @@ export class CreateInvoiceDto {
   @IsNotEmpty()
   client: ClientInvoiceDto;
 
+  @IsArray()
+  @ArrayMinSize(0)
+  receptorActivities: string[];
+
   @IsString()
   @IsNotEmpty()
   @IsEnum(StatusInvoice, {
