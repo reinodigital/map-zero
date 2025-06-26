@@ -9,6 +9,7 @@ import { AccountType } from './account-type.entity';
 import { Item } from 'src/modules/item/entities/item.entity';
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 import { InvoiceItem } from 'src/modules/invoice/entities/invoice-item.entity';
+import { PurchaseOrderItem } from 'src/modules/purchase-order/entities/purchase-order-item.entity';
 
 @Entity('account')
 export class Account {
@@ -44,6 +45,12 @@ export class Account {
 
   @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.account)
   quoteItems: QuoteItem[];
+
+  @OneToMany(
+    () => PurchaseOrderItem,
+    (purchaseOrderItem) => purchaseOrderItem.account,
+  )
+  purchaseOrderItems: PurchaseOrderItem[];
 
   @OneToMany(() => InvoiceItem, (invoiceItem) => invoiceItem.account)
   invoiceItems: InvoiceItem[];

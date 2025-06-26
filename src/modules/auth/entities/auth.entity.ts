@@ -1,5 +1,8 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
+import { PurchaseOrderItem } from 'src/modules/purchase-order/entities/purchase-order-item.entity';
+
 import { SecurityRoles } from 'src/enums';
 
 @Entity('auth')
@@ -35,4 +38,10 @@ export class Auth {
   /* Relations */
   @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.seller)
   quoteItems: QuoteItem[];
+
+  @OneToMany(
+    () => PurchaseOrderItem,
+    (purchaseOrderItem) => purchaseOrderItem.seller,
+  )
+  purchaseOrderItems: PurchaseOrderItem[];
 }

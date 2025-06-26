@@ -12,6 +12,7 @@ import { ClientAddress } from './client-address.entity';
 import { ClientContact } from './client-contact.entity';
 import { Quote } from 'src/modules/quote/entities/quote.entity';
 import { Invoice } from 'src/modules/invoice/entities/invoice.entity';
+import { PurchaseOrder } from 'src/modules/purchase-order/entities/purchase-order.entity';
 
 import { TypeClient, TypeCurrency, TypeIdentity } from 'src/enums';
 
@@ -71,6 +72,9 @@ export class Client {
 
   @OneToMany(() => Quote, (quote) => quote.client)
   quotes?: Quote[];
+
+  @OneToMany(() => PurchaseOrder, (purchaseOrder) => purchaseOrder.client)
+  purchaseOrders?: PurchaseOrder[];
 
   @OneToMany(() => Invoice, (invoice) => invoice.client)
   invoices?: Invoice[];

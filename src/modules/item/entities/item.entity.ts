@@ -9,6 +9,7 @@ import {
 import { QuoteItem } from 'src/modules/quote/entities/quote-item.entity';
 import { Account } from 'src/modules/accounting/entities/account.entity';
 import { InvoiceItem } from 'src/modules/invoice/entities/invoice-item.entity';
+import { PurchaseOrderItem } from 'src/modules/purchase-order/entities/purchase-order-item.entity';
 
 import { DecimalTransformer } from 'src/modules/shared/transformers/decimal-value.transformer';
 import { TypeItem } from 'src/enums';
@@ -85,6 +86,12 @@ export class Item {
 
   @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.item)
   quoteItems: QuoteItem[];
+
+  @OneToMany(
+    () => PurchaseOrderItem,
+    (purchaseOrderItem) => purchaseOrderItem.item,
+  )
+  purchaseOrderItems: PurchaseOrderItem[];
 
   @OneToMany(() => InvoiceItem, (invoiceItem) => invoiceItem.item)
   invoiceItems: InvoiceItem[];

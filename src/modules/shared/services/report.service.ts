@@ -4,9 +4,13 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-import { quoteInvoicePDFReport } from '../reports/quote-invoice-pdf.report';
 import { Quote } from 'src/modules/quote/entities/quote.entity';
+import { PurchaseOrder } from 'src/modules/purchase-order/entities/purchase-order.entity';
+
 import { PrinterService } from './printer.service';
+
+import { quoteInvoicePDFReport } from '../reports/quote-invoice-pdf.report';
+import { purchaseOrderInvoicePDFReport } from '../reports/purchase-order-invoice-pdf.report';
 
 @Injectable()
 export class ReportService {
@@ -16,6 +20,20 @@ export class ReportService {
   async generateQuotePDF(quote: Quote): Promise<PDFKit.PDFDocument> {
     try {
       const docDefinition = quoteInvoicePDFReport(quote);
+      const doc = this.printerService.createPdf(docDefinition);
+
+      return doc;
+    } catch (error) {
+      this.handleExceptionsErrorOnDB(error);
+    }
+  }
+
+  // PURCHASE ORDER
+  async generatePurchaseOrderPDF(
+    purchaseOrder: PurchaseOrder,
+  ): Promise<PDFKit.PDFDocument> {
+    try {
+      const docDefinition = purchaseOrderInvoicePDFReport(purchaseOrder);
       const doc = this.printerService.createPdf(docDefinition);
 
       return doc;
