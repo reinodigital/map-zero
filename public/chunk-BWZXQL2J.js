@@ -1,0 +1,1 @@
+import{E as i}from"./chunk-4ZQGKSBB.js";import{X as r,wa as a}from"./chunk-F6XVVQNR.js";var o=class t{lastOffsetItemsList=a(0);getTaxRateLabel(e){return i(e)}static \u0275fac=function(n){return new(n||t)};static \u0275prov=r({token:t,factory:t.\u0275fac,providedIn:"root"})};export{o as a};
