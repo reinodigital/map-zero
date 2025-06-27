@@ -12,4 +12,7 @@ export enum ActionOverEntity {
   VIEWED = 'visto',
   ADDED = 'agregado',
   CHANGE_STATUS = 'cambio_estado',
+  APPROVED = 'aprobada',
+  AWAITING_FOR_APPROVAL = 'esperando_a_ser_aprobada',
+  BILLED = 'pagada',
 }

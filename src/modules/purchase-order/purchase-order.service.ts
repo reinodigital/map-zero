@@ -487,8 +487,8 @@ export class PurchaseOrderService {
     };
   }
 
-  // WORKFLOW STEP 2 - ACCEPTED
-  async markAsAccepted(
+  // WORKFLOW STEP 1 - AWAITING APPROVAL
+  async markAsAwaitingApproval(
     purchaseOrderId: number,
     updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     userName: string,
@@ -504,46 +504,49 @@ export class PurchaseOrderService {
       );
     }
 
-    if (purchaseOrder.status === StatusPurchaseOrder.ACCEPTED) {
+    if (purchaseOrder.status === StatusPurchaseOrder.AWAITING_APPROVAL) {
       return {
-        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} ya estaba con estado aceptada anteriormente.`,
+        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} ya estaba con estado esperando ser aprobada anteriormente.`,
       };
     }
 
-    const allowedStatusToMarkAsAccepted = [StatusPurchaseOrder.SENT];
+    const allowedStatusToMarkAsAwaitingForApproval = [
+      StatusPurchaseOrder.DRAFT,
+      StatusPurchaseOrder.SENT,
+    ];
 
     if (
-      !allowedStatusToMarkAsAccepted.includes(
+      !allowedStatusToMarkAsAwaitingForApproval.includes(
         purchaseOrder.status as StatusPurchaseOrder,
       )
     ) {
       throw new BadRequestException(
-        `No se permite marcar orden de compra como aceptada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsAccepted.join(', ')}]`,
+        `No se permite marcar orden de compra como esperando ser aprobada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsAwaitingForApproval.join(', ')}]`,
       );
     }
 
     await this.purchaseOrderRepository.update(
       { id: purchaseOrderId },
-      { status: StatusPurchaseOrder.ACCEPTED },
+      { status: StatusPurchaseOrder.AWAITING_APPROVAL },
     );
 
     // generate tracking
     const itemTrackingDto = this.generateTracking(
       userName,
-      ActionOverEntity.ACCEPTED,
+      ActionOverEntity.AWAITING_FOR_APPROVAL,
       updatedAt,
-      `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como aceptada`,
+      `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como esperando por aprobación`,
       purchaseOrder,
     );
     await this.trackingService.create(itemTrackingDto);
 
     return {
-      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como aceptada correctamente.`,
+      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como esperando por aprobación correctamente.`,
     };
   }
 
-  // WORKFLOW STEP 2 - DECLINED
-  async markAsDeclined(
+  // WORKFLOW STEP 2 - APPROVED
+  async markAsApproved(
     purchaseOrderId: number,
     updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     userName: string,
@@ -559,100 +562,104 @@ export class PurchaseOrderService {
       );
     }
 
-    if (purchaseOrder.status === StatusPurchaseOrder.DECLINED) {
+    if (purchaseOrder.status === StatusPurchaseOrder.APPROVED) {
       return {
-        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} ya estaba con estado rechazada anteriormente.`,
+        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} ya estaba con estado aprobada anteriormente.`,
       };
     }
 
-    const allowedStatusToMarkAsDeclined = [StatusPurchaseOrder.SENT];
+    const allowedStatusToMarkAsApproved = [
+      StatusPurchaseOrder.DRAFT,
+      StatusPurchaseOrder.SENT,
+      StatusPurchaseOrder.AWAITING_APPROVAL,
+    ];
 
     if (
-      !allowedStatusToMarkAsDeclined.includes(
+      !allowedStatusToMarkAsApproved.includes(
         purchaseOrder.status as StatusPurchaseOrder,
       )
     ) {
       throw new BadRequestException(
-        `No se permite marcar orden de compra como rechazada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsDeclined.join(', ')}]`,
+        `No se permite marcar orden de compra como aprobada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsApproved.join(', ')}]`,
       );
     }
 
     await this.purchaseOrderRepository.update(
       { id: purchaseOrderId },
-      { status: StatusPurchaseOrder.DECLINED },
+      { status: StatusPurchaseOrder.APPROVED },
     );
 
     // generate tracking
     const itemTrackingDto = this.generateTracking(
       userName,
-      ActionOverEntity.DECLINED,
+      ActionOverEntity.APPROVED,
       updatedAt,
-      `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como rechazada`,
+      `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como aprobada`,
       purchaseOrder,
     );
     await this.trackingService.create(itemTrackingDto);
 
     return {
-      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como rechazada correctamente.`,
+      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como aprobada correctamente.`,
     };
   }
 
   // WORKFLOW STEP 3
-  // async markAsInvoiced(
-  //   purchaseOrderId: number,
-  //   updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
-  //   userName: string,
-  // ): Promise<IMessage> {
-  //   const { updatedAt } = updatePurchaseOrderStatusDto;
-  //   const purchaseOrder = await this.purchaseOrderRepository.findOneBy({
-  //     id: purchaseOrderId,
-  //   });
-  //   if (!purchaseOrder) {
-  //     throw new BadRequestException(
-  //       `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
-  //     );
-  //   }
+  async markAsBilled(
+    purchaseOrderId: number,
+    updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const { updatedAt } = updatePurchaseOrderStatusDto;
+    const purchaseOrder = await this.purchaseOrderRepository.findOneBy({
+      id: purchaseOrderId,
+    });
+    if (!purchaseOrder) {
+      throw new BadRequestException(
+        `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
+      );
+    }
 
-  //   if (purchaseOrder.status === StatusPurchaseOrder.INVOICED) {
-  //     return {
-  //       msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} ya estaba con estado facturada anteriormente.`,
-  //     };
-  //   }
+    if (purchaseOrder.status === StatusPurchaseOrder.BILLED) {
+      return {
+        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} ya estaba con estado pagada anteriormente.`,
+      };
+    }
 
-  //   const allowedStatusToMarkAsInvoiced = [StatusPurchaseOrder.ACCEPTED];
+    const allowedStatusToMarkAsBilled = [StatusPurchaseOrder.APPROVED];
 
-  //   if (
-  //     !allowedStatusToMarkAsInvoiced.includes(
-  //       purchaseOrder.status as StatusPurchaseOrder,
-  //     )
-  //   ) {
-  //     throw new BadRequestException(
-  //       `No se permite marcar orden de compra como facturada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsInvoiced.join(', ')}]`,
-  //     );
-  //   }
+    if (
+      !allowedStatusToMarkAsBilled.includes(
+        purchaseOrder.status as StatusPurchaseOrder,
+      )
+    ) {
+      throw new BadRequestException(
+        `No se permite marcar orden de compra como pagada si no presenta uno de los estados siguientes: [${allowedStatusToMarkAsBilled.join(', ')}]`,
+      );
+    }
 
-  //   await this.purchaseOrderRepository.update(
-  //     { id: purchaseOrderId },
-  //     { status: StatusPurchaseOrder.INVOICED },
-  //   );
+    await this.purchaseOrderRepository.update(
+      { id: purchaseOrderId },
+      { status: StatusPurchaseOrder.BILLED },
+    );
 
-  //   // generate tracking
-  //   const itemTrackingDto = this.generateTracking(
-  //     userName,
-  //     ActionOverEntity.INVOICED,
-  //     updatedAt,
-  //     `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como facturada`,
-  //     purchaseOrder,
-  //   );
-  //   await this.trackingService.create(itemTrackingDto);
+    // generate tracking
+    const itemTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.BILLED,
+      updatedAt,
+      `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como pagada`,
+      purchaseOrder,
+    );
+    await this.trackingService.create(itemTrackingDto);
 
-  //   return {
-  //     msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como facturada correctamente.`,
-  //   };
-  // }
+    return {
+      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} marcada como pagada correctamente.`,
+    };
+  }
 
   /* UnMark Purchase Orders*/
-  async unMarkAsAccepted(
+  async unMarkAsAwaitingApproval(
     purchaseOrderId: number,
     updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     userName: string,
@@ -668,15 +675,17 @@ export class PurchaseOrderService {
         );
       }
 
-      const allowedStatusToUnMarkAsAccepted = [StatusPurchaseOrder.ACCEPTED];
+      const allowedStatusToUnMarkAsAwaitingApproval = [
+        StatusPurchaseOrder.AWAITING_APPROVAL,
+      ];
 
       if (
-        !allowedStatusToUnMarkAsAccepted.includes(
+        !allowedStatusToUnMarkAsAwaitingApproval.includes(
           purchaseOrder.status as StatusPurchaseOrder,
         )
       ) {
         throw new BadRequestException(
-          `No se permite desmarcar como aceptada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsAccepted}`,
+          `No se permite desmarcar como esperando a ser aprobada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsAwaitingApproval}`,
         );
       }
 
@@ -690,20 +699,20 @@ export class PurchaseOrderService {
         userName,
         ActionOverEntity.CHANGE_STATUS,
         updatedAt,
-        `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.ACCEPTED} a ${StatusPurchaseOrder.SENT}`,
+        `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.AWAITING_APPROVAL} a ${StatusPurchaseOrder.SENT}`,
         purchaseOrder,
       );
       await this.trackingService.create(itemTrackingDto);
 
       return {
-        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como aceptada correctamente.`,
+        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como esperando a ser aprobada correctamente.`,
       };
     } catch (error) {
       this.handleErrorOnDB(error);
     }
   }
 
-  async unMarkAsDeclined(
+  async unMarkAsApproved(
     purchaseOrderId: number,
     updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     userName: string,
@@ -719,21 +728,21 @@ export class PurchaseOrderService {
       );
     }
 
-    const allowedStatusToUnMarkAsDeclined = [StatusPurchaseOrder.DECLINED];
+    const allowedStatusToUnMarkAsApproved = [StatusPurchaseOrder.APPROVED];
 
     if (
-      !allowedStatusToUnMarkAsDeclined.includes(
+      !allowedStatusToUnMarkAsApproved.includes(
         purchaseOrder.status as StatusPurchaseOrder,
       )
     ) {
       throw new BadRequestException(
-        `No se permite desmarcar como rechazada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsDeclined}`,
+        `No se permite desmarcar como aprobada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsApproved}`,
       );
     }
 
     await this.purchaseOrderRepository.update(
       { id: purchaseOrderId },
-      { status: StatusPurchaseOrder.SENT },
+      { status: StatusPurchaseOrder.AWAITING_APPROVAL },
     );
 
     // generate tracking
@@ -741,13 +750,61 @@ export class PurchaseOrderService {
       userName,
       ActionOverEntity.CHANGE_STATUS,
       updatedAt,
-      `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.DECLINED} a ${StatusPurchaseOrder.SENT}`,
+      `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.APPROVED} a ${StatusPurchaseOrder.AWAITING_APPROVAL}`,
       purchaseOrder,
     );
     await this.trackingService.create(itemTrackingDto);
 
     return {
-      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como rechazada correctamente.`,
+      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como aprobada correctamente.`,
+    };
+  }
+
+  async unMarkAsBilled(
+    purchaseOrderId: number,
+    updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
+    userName: string,
+  ) {
+    const { updatedAt } = updatePurchaseOrderStatusDto;
+
+    const purchaseOrder = await this.purchaseOrderRepository.findOneBy({
+      id: purchaseOrderId,
+    });
+    if (!purchaseOrder) {
+      throw new BadRequestException(
+        `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
+      );
+    }
+
+    const allowedStatusToUnMarkAsBilled = [StatusPurchaseOrder.BILLED];
+
+    if (
+      !allowedStatusToUnMarkAsBilled.includes(
+        purchaseOrder.status as StatusPurchaseOrder,
+      )
+    ) {
+      throw new BadRequestException(
+        `No se permite desmarcar como pagada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsBilled}`,
+      );
+    }
+
+    await this.purchaseOrderRepository.update(
+      { id: purchaseOrderId },
+      { status: StatusPurchaseOrder.APPROVED },
+    );
+
+    // generate tracking
+    const itemTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.CHANGE_STATUS,
+      updatedAt,
+      `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.BILLED} a ${StatusPurchaseOrder.APPROVED}`,
+      purchaseOrder,
+    );
+    await this.trackingService.create(itemTrackingDto);
+
+    return {
+      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como pagada correctamente.`,
     };
   }
   /* END UnMark purchase orders*/

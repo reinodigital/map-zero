@@ -1,9 +1,9 @@
 export enum StatusPurchaseOrder {
   DRAFT = 'borrador',
   SENT = 'enviada',
-  DECLINED = 'rechazada',
-  ACCEPTED = 'aceptada',
-  INVOICED = 'facturada',
+  APPROVED = 'aprobada',
+  AWAITING_APPROVAL = 'esperando_aprobación',
+  BILLED = 'pagada',
   REMOVED = 'removida',
 }
 

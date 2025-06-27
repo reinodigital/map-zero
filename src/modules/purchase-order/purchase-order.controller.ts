@@ -94,91 +94,91 @@ export class PurchaseOrderController {
     );
   }
 
-  @Patch('mark-as-accepted/:id')
+  @Patch('mark-as-awaiting-approval/:id')
   @AuthDecorator()
-  markAsAccepted(
+  markAsAwaitingApproval(
     @Param('id', ParseIntPipe) id: string,
     @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     @GetUser(ListDataUser.name) userName: string,
   ) {
-    return this.purchaseOrderService.markAsAccepted(
+    return this.purchaseOrderService.markAsAwaitingApproval(
       +id,
       updatePurchaseOrderStatusDto,
       userName,
     );
   }
 
-  @Patch('mark-as-declined/:id')
+  @Patch('mark-as-approved/:id')
   @AuthDecorator()
-  markAsDeclined(
+  markAsApproved(
     @Param('id', ParseIntPipe) id: string,
     @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     @GetUser(ListDataUser.name) userName: string,
   ) {
-    return this.purchaseOrderService.markAsDeclined(
+    return this.purchaseOrderService.markAsApproved(
       +id,
       updatePurchaseOrderStatusDto,
       userName,
     );
   }
 
-  // @Patch('mark-as-invoiced/:id')
-  // @AuthDecorator()
-  // markAsInvoiced(
-  //   @Param('id', ParseIntPipe) id: string,
-  //   @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
-  //   @GetUser(ListDataUser.name) userName: string,
-  // ) {
-  //   return this.purchaseOrderService.markAsInvoiced(
-  //     +id,
-  //     updatePurchaseOrderStatusDto,
-  //     userName,
-  //   );
-  // }
+  @Patch('mark-as-billed/:id')
+  @AuthDecorator()
+  markAsBilled(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.purchaseOrderService.markAsBilled(
+      +id,
+      updatePurchaseOrderStatusDto,
+      userName,
+    );
+  }
   /* End Mark Purchase Orders */
 
   /* UnMark Purchase Orders */
-  @Patch('undo-mark-as-accepted/:id')
+  @Patch('undo-mark-as-awaiting-approval/:id')
   @AuthDecorator()
-  undoMarkAsAccepted(
+  undoMarkAsAwaitingApproval(
     @Param('id', ParseIntPipe) id: string,
     @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     @GetUser(ListDataUser.name) userName: string,
   ) {
-    return this.purchaseOrderService.unMarkAsAccepted(
+    return this.purchaseOrderService.unMarkAsAwaitingApproval(
       +id,
       updatePurchaseOrderStatusDto,
       userName,
     );
   }
 
-  @Patch('undo-mark-as-declined/:id')
+  @Patch('undo-mark-as-approved/:id')
   @AuthDecorator()
-  undoMarkAsDeclined(
+  undoMarkAsApproved(
     @Param('id', ParseIntPipe) id: string,
     @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     @GetUser(ListDataUser.name) userName: string,
   ) {
-    return this.purchaseOrderService.unMarkAsDeclined(
+    return this.purchaseOrderService.unMarkAsApproved(
       +id,
       updatePurchaseOrderStatusDto,
       userName,
     );
   }
 
-  // @Patch('undo-mark-as-invoiced/:id')
-  // @AuthDecorator()
-  // undoMarkAsInvoiced(
-  //   @Param('id', ParseIntPipe) id: string,
-  //   @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
-  //   @GetUser(ListDataUser.name) userName: string,
-  // ) {
-  //   return this.purchaseOrderService.unMarkAsInvoiced(
-  //     +id,
-  //     updatePurchaseOrderStatusDto,
-  //     userName,
-  //   );
-  // }
+  @Patch('undo-mark-as-billed/:id')
+  @AuthDecorator()
+  undoMarkAsBilled(
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.purchaseOrderService.unMarkAsBilled(
+      +id,
+      updatePurchaseOrderStatusDto,
+      userName,
+    );
+  }
   /* END UnMark Purchase Orders */
 
   @Patch(':id')
