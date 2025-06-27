@@ -13,6 +13,7 @@ import { CabysModule } from './modules/cabys/cabys.module';
 import { ClientsModule } from './modules/client/client.module';
 import { ItemModule } from './modules/item/item.module';
 import { QuoteModule } from './modules/quote/quote.module';
+import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { SeedModule } from './modules/seed/seed.module';
 import { SharedModule } from './modules/shared/shared.module';
@@ -47,6 +48,7 @@ import { TrackingModule } from './modules/tracking/tracking.module';
     ClientsModule,
     ItemModule,
     QuoteModule,
+    PurchaseOrderModule,
     InvoiceModule,
     SeedModule,
     SharedModule,

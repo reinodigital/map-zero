@@ -47,10 +47,9 @@ export const quoteInvoicePDFReport = (quote: Quote): TDocumentDefinitions => {
   } = quote;
 
   const readableInitDate = formatDateAsReadable(initDate!.toISOString(), false);
-  const readableExpireDate = formatDateAsReadable(
-    expireDate?.toISOString() ?? '',
-    false,
-  );
+  const readableExpireDate = expireDate
+    ? formatDateAsReadable(expireDate!.toISOString() ?? '', false)
+    : '';
 
   const { iva, descuentos, subtotal, total } = quoteTotals(quoteItems);
   const clientAddress = client.addresses?.length

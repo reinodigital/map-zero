@@ -34,17 +34,16 @@ export const purchaseOrderInvoicePDFReport = (
     currency,
     total: totalToPay,
     initDate,
-    expireDate = null,
+    deliveryDate = null,
     client,
     purchaseOrderItems,
-    terms = '',
+    deliveryInstructions = '',
   } = purchaseOrder;
 
   const readableInitDate = formatDateAsReadable(initDate!.toISOString(), false);
-  const readableExpireDate = formatDateAsReadable(
-    expireDate?.toISOString() ?? '',
-    false,
-  );
+  const readableDeliveryDate = deliveryDate
+    ? formatDateAsReadable(deliveryDate!.toISOString(), false)
+    : '';
 
   const { iva, descuentos, subtotal, total } =
     purchaseOrderTotals(purchaseOrderItems);
@@ -129,11 +128,11 @@ export const purchaseOrderInvoicePDFReport = (
           {
             text: [
               {
-                text: `Fecha inicio: ${readableInitDate}\n`,
+                text: `Fecha: ${readableInitDate}\n`,
                 bold: true,
               },
               {
-                text: `Fecha vencimiento: ${expireDate ? readableExpireDate : ''}\n`,
+                text: `Fecha entrega: ${deliveryDate ? readableDeliveryDate : ''}\n`,
                 bold: true,
               },
             ],
@@ -193,7 +192,7 @@ export const purchaseOrderInvoicePDFReport = (
             width: 250,
             marginTop: 10,
             fontSize: 10,
-            text: `Términos: ${terms}`,
+            text: `Instrucciones de entrega: ${deliveryInstructions}`,
           },
           {
             width: '*',

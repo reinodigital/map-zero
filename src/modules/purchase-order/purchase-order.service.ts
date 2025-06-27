@@ -18,7 +18,6 @@ import { PurchaseOrderItemService } from './purchase-order-item.service';
 import { TrackingService } from '../tracking/tracking.service';
 import { ReportService } from '../shared/services/report.service';
 import { NodemailerService } from '../shared/services/nodemailer.service';
-import { InvoiceService } from '../invoice/invoice.service';
 
 import { getTaxRateValue } from '../shared/helpers/tax-rate';
 import { roundToTwoDecimals } from '../shared/helpers/round-two-decimals.helper';
@@ -61,7 +60,6 @@ export class PurchaseOrderService {
 
     private readonly purchaseOrderItemService: PurchaseOrderItemService,
     private readonly trackingService: TrackingService,
-    private readonly invoiceService: InvoiceService,
     private readonly reportService: ReportService,
     private readonly nodemailerService: NodemailerService,
   ) {}
