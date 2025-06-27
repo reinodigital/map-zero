@@ -18,8 +18,11 @@ export class PurchaseOrder {
   @Column({ length: 32, nullable: false, default: StatusPurchaseOrder.DRAFT })
   status: string;
 
-  @Column({ length: 32, nullable: false, default: 'QU-' })
+  @Column({ length: 32, nullable: false, default: 'OC-' })
   purchaseOrderNumber: string;
+
+  @Column({ length: 64, nullable: true, default: null })
+  reference?: string; // FA-XXX
 
   @Column({
     type: 'decimal',
@@ -48,13 +51,13 @@ export class PurchaseOrder {
       from: (value: Date | null) => value,
     },
   })
-  expireDate?: Date;
+  deliveryDate?: Date;
 
   @Column({ length: 16, nullable: false })
   currency: string;
 
   @Column({ nullable: true, default: null })
-  terms?: string; // field to explain some term or condition
+  deliveryInstructions?: string;
 
   @Column({ type: 'boolean', nullable: false, default: true })
   isActive: boolean;

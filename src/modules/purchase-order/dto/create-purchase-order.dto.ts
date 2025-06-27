@@ -100,11 +100,15 @@ export class CreatePurchaseOrderDto {
 
   @IsOptional()
   @IsString()
+  reference?: string; // maybe QU-XXX
+
+  @IsOptional()
+  @IsString()
   initDate?: string;
 
   @IsOptional()
   @IsString()
-  expireDate?: string;
+  deliveryDate?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -115,7 +119,7 @@ export class CreatePurchaseOrderDto {
 
   @IsOptional()
   @IsString()
-  terms?: string;
+  deliveryInstructions?: string;
 
   @IsArray()
   @ArrayMinSize(1)
