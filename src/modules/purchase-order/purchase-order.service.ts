@@ -337,6 +337,9 @@ export class PurchaseOrderService {
       const allowedStatusToEditPurchaseOrder = [
         StatusPurchaseOrder.DRAFT,
         StatusPurchaseOrder.SENT,
+        StatusPurchaseOrder.AWAITING_APPROVAL,
+        StatusPurchaseOrder.APPROVED,
+        StatusPurchaseOrder.BILLED,
       ];
       if (
         !allowedStatusToEditPurchaseOrder.includes(

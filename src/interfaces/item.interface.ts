@@ -30,5 +30,6 @@ export interface IItemSuggestion {
   description: string;
   salePrice: number;
   saleAccountId: number | null;
+  purchaseAccountId: number | null;
   // type: string | null; // in case of make it generic
 }

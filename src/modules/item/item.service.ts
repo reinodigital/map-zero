@@ -133,7 +133,7 @@ export class ItemService {
           { cabys: { code: Like(`%${terminus}%`) } },
           { saleDescription: Like(`%${terminus}%`) },
         ],
-        relations: { cabys: true, saleAccount: true },
+        relations: { cabys: true, saleAccount: true, purchaseAccount: true },
         take: 12,
         order: {
           name: 'desc',
@@ -152,6 +152,7 @@ export class ItemService {
             description: Constants.NOT_RESULTS,
             salePrice: 0,
             saleAccountId: null,
+            purchaseAccountId: null,
           },
         ];
       }
@@ -166,6 +167,7 @@ export class ItemService {
             description: item.saleDescription,
             salePrice: item.salePrice,
             saleAccountId: item.saleAccount?.id ?? null,
+            purchaseAccountId: item.purchaseAccount?.id ?? null,
           }) as IItemSuggestion,
       );
     } catch (error) {
@@ -177,7 +179,7 @@ export class ItemService {
     try {
       const item = await this.itemRepository.findOne({
         where: { id },
-        relations: { cabys: true, saleAccount: true },
+        relations: { cabys: true, saleAccount: true, purchaseAccount: true },
       });
 
       if (!item) {
@@ -192,6 +194,7 @@ export class ItemService {
         description: item.saleDescription ?? '',
         salePrice: item.salePrice ?? 0,
         saleAccountId: item.saleAccount?.id ?? null,
+        purchaseAccountId: item.purchaseAccount?.id ?? null,
       };
     } catch (error) {
       this.handleErrorOnDB(error);
