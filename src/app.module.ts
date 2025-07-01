@@ -19,6 +19,7 @@ import { SeedModule } from './modules/seed/seed.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { TerritoryModule } from './modules/territory/territory.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
+import { OverviewModule } from './modules/overview/overview.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { TrackingModule } from './modules/tracking/tracking.module';
     SharedModule,
     TerritoryModule,
     TrackingModule,
+    OverviewModule,
   ],
   controllers: [],
   providers: [],
