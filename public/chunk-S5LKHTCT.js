@@ -1,0 +1,1 @@
+import{g as n}from"./chunk-SF27WFEL.js";import{Za as i}from"./chunk-BXSYLYWC.js";var a=class e{transform(r,t="d MMMM y",m="en-US"){return r?n(r,t,m,"UTC"):null}static \u0275fac=function(t){return new(t||e)};static \u0275pipe=i({name:"readableDate",type:e,pure:!0})};export{a};
