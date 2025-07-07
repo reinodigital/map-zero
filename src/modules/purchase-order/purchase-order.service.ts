@@ -176,27 +176,23 @@ export class PurchaseOrderService {
   public async generatePDF(
     purchaseOrderId: number,
   ): Promise<PDFKit.PDFDocument> {
-    try {
-      const purchaseOrder = await this.purchaseOrderRepository.findOne({
-        where: { id: purchaseOrderId },
-        relations: {
-          client: { addresses: true },
-          purchaseOrderItems: { item: { cabys: true } },
-        },
-      });
-      if (!purchaseOrder) {
-        throw new BadRequestException(
-          `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
-        );
-      }
-
-      const doc =
-        await this.reportService.generatePurchaseOrderPDF(purchaseOrder);
-
-      return doc;
-    } catch (error) {
-      this.handleErrorOnDB(error);
+    const purchaseOrder = await this.purchaseOrderRepository.findOne({
+      where: { id: purchaseOrderId },
+      relations: {
+        client: { addresses: true },
+        purchaseOrderItems: { item: { cabys: true } },
+      },
+    });
+    if (!purchaseOrder) {
+      throw new BadRequestException(
+        `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
+      );
     }
+
+    const doc =
+      await this.reportService.generatePurchaseOrderPDF(purchaseOrder);
+
+    return doc;
   }
 
   async findAll(
@@ -230,85 +226,73 @@ export class PurchaseOrderService {
       findOptions.where = whereConditions;
     }
 
-    try {
-      const [purchaseOrders, totalQuery] =
-        await this.purchaseOrderRepository.findAndCount(findOptions);
+    const [purchaseOrders, totalQuery] =
+      await this.purchaseOrderRepository.findAndCount(findOptions);
 
-      const { statusCounts, total } =
-        await this.filterTotalsByPurchaseOrderStatus();
+    const { statusCounts, total } =
+      await this.filterTotalsByPurchaseOrderStatus();
 
-      return {
-        count: totalQuery,
-        purchaseOrders,
-        statusCounts,
-        total,
-      };
-    } catch (error) {
-      this.handleErrorOnDB(error);
-    }
+    return {
+      count: totalQuery,
+      purchaseOrders,
+      statusCounts,
+      total,
+    };
   }
 
   private async filterTotalsByPurchaseOrderStatus(): Promise<any> {
-    try {
-      const groupedStatusRaw = await this.purchaseOrderRepository
-        .createQueryBuilder('purchaseOrder')
-        .select('purchaseOrder.status', 'status')
-        .addSelect('COUNT(*)', 'count')
-        .groupBy('purchaseOrder.status')
-        .getRawMany();
+    const groupedStatusRaw = await this.purchaseOrderRepository
+      .createQueryBuilder('purchaseOrder')
+      .select('purchaseOrder.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('purchaseOrder.status')
+      .getRawMany();
 
-      // Transform array into an object
-      const statusCounts: Record<string, number> = {};
-      let total = 0;
-      groupedStatusRaw.forEach((row) => {
-        const totalByStatus = parseInt(row.count, 10);
-        statusCounts[row.status] = totalByStatus;
-        total += totalByStatus;
-      });
+    // Transform array into an object
+    const statusCounts: Record<string, number> = {};
+    let total = 0;
+    groupedStatusRaw.forEach((row) => {
+      const totalByStatus = parseInt(row.count, 10);
+      statusCounts[row.status] = totalByStatus;
+      total += totalByStatus;
+    });
 
-      return { statusCounts, total };
-    } catch (error) {
-      this.handleErrorOnDB(error);
-    }
+    return { statusCounts, total };
   }
 
   async findOne(id: number): Promise<IDetailPurchaseOrder> {
-    try {
-      const purchaseOrder = await this.purchaseOrderRepository
-        .createQueryBuilder('purchaseOrder')
-        .leftJoinAndSelect('purchaseOrder.client', 'client')
-        .leftJoinAndSelect(
-          'purchaseOrder.purchaseOrderItems',
-          'purchaseOrderItems',
-        )
-        .leftJoin('purchaseOrderItems.item', 'item') // You can also use leftJoinAndSelect if needed
-        .leftJoin('purchaseOrderItems.seller', 'seller')
-        .leftJoin('purchaseOrderItems.account', 'account')
-        .addSelect(['item.name', 'item.id']) // Only select item.name and item.id
-        .addSelect(['seller.name', 'seller.uid']) // Only select seller.name and seller.uid
-        .addSelect(['account.name', 'account.id', 'account.code'])
-        .where('purchaseOrder.id = :id', { id })
-        .getOne();
+    const purchaseOrder = await this.purchaseOrderRepository
+      .createQueryBuilder('purchaseOrder')
+      .leftJoinAndSelect('purchaseOrder.client', 'client')
+      .leftJoinAndSelect(
+        'purchaseOrder.purchaseOrderItems',
+        'purchaseOrderItems',
+      )
+      .leftJoin('purchaseOrderItems.item', 'item') // You can also use leftJoinAndSelect if needed
+      .leftJoin('purchaseOrderItems.seller', 'seller')
+      .leftJoin('purchaseOrderItems.account', 'account')
+      .addSelect(['item.name', 'item.id']) // Only select item.name and item.id
+      .addSelect(['seller.name', 'seller.uid']) // Only select seller.name and seller.uid
+      .addSelect(['account.name', 'account.id', 'account.code'])
+      .where('purchaseOrder.id = :id', { id })
+      .getOne();
 
-      if (!purchaseOrder) {
-        throw new BadRequestException(
-          `Orden de compra con ID: ${id} no encontrada.`,
-        );
-      }
-
-      // fetch trackings
-      const result: IDetailPurchaseOrder = {
-        ...purchaseOrder,
-        tracking: await this.trackingService.fetchTrackings(
-          NameEntities.PURCHASE_ORDER,
-          id,
-        ),
-      };
-
-      return result;
-    } catch (error) {
-      this.handleErrorOnDB(error);
+    if (!purchaseOrder) {
+      throw new BadRequestException(
+        `Orden de compra con ID: ${id} no encontrada.`,
+      );
     }
+
+    // fetch trackings
+    const result: IDetailPurchaseOrder = {
+      ...purchaseOrder,
+      tracking: await this.trackingService.fetchTrackings(
+        NameEntities.PURCHASE_ORDER,
+        id,
+      ),
+    };
+
+    return result;
   }
 
   async update(
@@ -322,85 +306,80 @@ export class PurchaseOrderService {
       updatedAt,
       ...restPurchaseOrder
     } = updatePurchaseOrderDto;
-    try {
-      const existingPurchaseOrder = await this.purchaseOrderRepository.findOne({
-        where: { id },
-        relations: { client: true, purchaseOrderItems: true },
+
+    const existingPurchaseOrder = await this.purchaseOrderRepository.findOne({
+      where: { id },
+      relations: { client: true, purchaseOrderItems: true },
+    });
+
+    if (!existingPurchaseOrder) {
+      throw new NotFoundException(`Orden de compra con ID ${id} no encontrada`);
+    }
+
+    const allowedStatusToEditPurchaseOrder = [
+      StatusPurchaseOrder.DRAFT,
+      StatusPurchaseOrder.SENT,
+      StatusPurchaseOrder.AWAITING_APPROVAL,
+      StatusPurchaseOrder.APPROVED,
+      StatusPurchaseOrder.BILLED,
+    ];
+    if (
+      !allowedStatusToEditPurchaseOrder.includes(
+        existingPurchaseOrder.status as StatusPurchaseOrder,
+      )
+    ) {
+      throw new BadRequestException(
+        `Orden de compra ${existingPurchaseOrder.id} con estado ${existingPurchaseOrder.status} no permite ser editada. Para editar una orden de compra debe de presentar uno de los estados siguientes: [${allowedStatusToEditPurchaseOrder}]`,
+      );
+    }
+
+    // STEP 1: verify if client changed
+    let possibleNewClient: Client = existingPurchaseOrder.client;
+    if (client?.id && existingPurchaseOrder.client.id !== client.id) {
+      const newClient = await this.clientRepository.findOneBy({
+        id: client.id,
+      });
+      if (!newClient) {
+        throw new BadRequestException(
+          `Cliente con ID: ${client.id} no encontrado.`,
+        );
+      }
+
+      possibleNewClient = newClient;
+    }
+
+    // STEP 2: preload purchase order with new data
+    const preloadedPurchaseOrder: PurchaseOrder | undefined =
+      await this.purchaseOrderRepository.preload({
+        id,
+        ...restPurchaseOrder,
+        client: possibleNewClient,
       });
 
-      if (!existingPurchaseOrder) {
-        throw new NotFoundException(
-          `Orden de compra con ID ${id} no encontrada`,
-        );
-      }
-
-      const allowedStatusToEditPurchaseOrder = [
-        StatusPurchaseOrder.DRAFT,
-        StatusPurchaseOrder.SENT,
-        StatusPurchaseOrder.AWAITING_APPROVAL,
-        StatusPurchaseOrder.APPROVED,
-        StatusPurchaseOrder.BILLED,
-      ];
-      if (
-        !allowedStatusToEditPurchaseOrder.includes(
-          existingPurchaseOrder.status as StatusPurchaseOrder,
-        )
-      ) {
-        throw new BadRequestException(
-          `Orden de compra ${existingPurchaseOrder.id} con estado ${existingPurchaseOrder.status} no permite ser editada. Para editar una orden de compra debe de presentar uno de los estados siguientes: [${allowedStatusToEditPurchaseOrder}]`,
-        );
-      }
-
-      // STEP 1: verify if client changed
-      let possibleNewClient: Client = existingPurchaseOrder.client;
-      if (client?.id && existingPurchaseOrder.client.id !== client.id) {
-        const newClient = await this.clientRepository.findOneBy({
-          id: client.id,
-        });
-        if (!newClient) {
-          throw new BadRequestException(
-            `Cliente con ID: ${client.id} no encontrado.`,
-          );
-        }
-
-        possibleNewClient = newClient;
-      }
-
-      // STEP 2: preload purchase order with new data
-      const preloadedPurchaseOrder: PurchaseOrder | undefined =
-        await this.purchaseOrderRepository.preload({
-          id,
-          ...restPurchaseOrder,
-          client: possibleNewClient,
-        });
-
-      // STEP 3: synchronize purchase order items
-      const totalToPay =
-        await this.purchaseOrderItemService.syncPurchaseOrderItems(
-          preloadedPurchaseOrder!,
-          purchaseOrderItems,
-        );
-
-      preloadedPurchaseOrder!.total = roundToTwoDecimals(totalToPay);
-
-      const savedPurchaseOrder = await this.purchaseOrderRepository.save(
+    // STEP 3: synchronize purchase order items
+    const totalToPay =
+      await this.purchaseOrderItemService.syncPurchaseOrderItems(
         preloadedPurchaseOrder!,
+        purchaseOrderItems,
       );
 
-      // generate tracking
-      const itemTrackingDto = this.generateTracking(
-        userName,
-        ActionOverEntity.EDITED,
-        updatedAt,
-        `Orden de compra OC-${savedPurchaseOrder.id} ha sido editada`,
-        savedPurchaseOrder,
-      );
-      await this.trackingService.create(itemTrackingDto);
+    preloadedPurchaseOrder!.total = roundToTwoDecimals(totalToPay);
 
-      return savedPurchaseOrder;
-    } catch (error) {
-      this.handleErrorOnDB(error);
-    }
+    const savedPurchaseOrder = await this.purchaseOrderRepository.save(
+      preloadedPurchaseOrder!,
+    );
+
+    // generate tracking
+    const itemTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.EDITED,
+      updatedAt,
+      `Orden de compra OC-${savedPurchaseOrder.id} ha sido editada`,
+      savedPurchaseOrder,
+    );
+    await this.trackingService.create(itemTrackingDto);
+
+    return savedPurchaseOrder;
   }
 
   async remove(
@@ -668,51 +647,48 @@ export class PurchaseOrderService {
     userName: string,
   ) {
     const { updatedAt } = updatePurchaseOrderStatusDto;
-    try {
-      const purchaseOrder = await this.purchaseOrderRepository.findOneBy({
-        id: purchaseOrderId,
-      });
-      if (!purchaseOrder) {
-        throw new BadRequestException(
-          `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
-        );
-      }
 
-      const allowedStatusToUnMarkAsAwaitingApproval = [
-        StatusPurchaseOrder.AWAITING_APPROVAL,
-      ];
-
-      if (
-        !allowedStatusToUnMarkAsAwaitingApproval.includes(
-          purchaseOrder.status as StatusPurchaseOrder,
-        )
-      ) {
-        throw new BadRequestException(
-          `No se permite desmarcar como esperando a ser aprobada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsAwaitingApproval}`,
-        );
-      }
-
-      await this.purchaseOrderRepository.update(
-        { id: purchaseOrderId },
-        { status: StatusPurchaseOrder.SENT },
+    const purchaseOrder = await this.purchaseOrderRepository.findOneBy({
+      id: purchaseOrderId,
+    });
+    if (!purchaseOrder) {
+      throw new BadRequestException(
+        `Orden de compra con ID: ${purchaseOrderId} no encontrada.`,
       );
-
-      // generate tracking
-      const itemTrackingDto = this.generateTracking(
-        userName,
-        ActionOverEntity.CHANGE_STATUS,
-        updatedAt,
-        `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.AWAITING_APPROVAL} a ${StatusPurchaseOrder.SENT}`,
-        purchaseOrder,
-      );
-      await this.trackingService.create(itemTrackingDto);
-
-      return {
-        msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como esperando a ser aprobada correctamente.`,
-      };
-    } catch (error) {
-      this.handleErrorOnDB(error);
     }
+
+    const allowedStatusToUnMarkAsAwaitingApproval = [
+      StatusPurchaseOrder.AWAITING_APPROVAL,
+    ];
+
+    if (
+      !allowedStatusToUnMarkAsAwaitingApproval.includes(
+        purchaseOrder.status as StatusPurchaseOrder,
+      )
+    ) {
+      throw new BadRequestException(
+        `No se permite desmarcar como esperando a ser aprobada una orden de compra si no presenta estado: ${allowedStatusToUnMarkAsAwaitingApproval}`,
+      );
+    }
+
+    await this.purchaseOrderRepository.update(
+      { id: purchaseOrderId },
+      { status: StatusPurchaseOrder.SENT },
+    );
+
+    // generate tracking
+    const itemTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.CHANGE_STATUS,
+      updatedAt,
+      `Orden de compra ${purchaseOrder.purchaseOrderNumber} cambia estado de ${StatusPurchaseOrder.AWAITING_APPROVAL} a ${StatusPurchaseOrder.SENT}`,
+      purchaseOrder,
+    );
+    await this.trackingService.create(itemTrackingDto);
+
+    return {
+      msg: `Orden de compra ${purchaseOrder.purchaseOrderNumber} desmarcada como esperando a ser aprobada correctamente.`,
+    };
   }
 
   async unMarkAsApproved(
@@ -913,19 +889,5 @@ export class PurchaseOrderService {
     };
 
     return newTracking;
-  }
-
-  private handleErrorOnDB(err: any): never {
-    if (err.response?.statusCode === 400) {
-      throw new BadRequestException(err.response.message);
-    }
-
-    const { errno, sqlMessage } = err;
-    if (errno === 1062 || errno === 1364)
-      throw new BadRequestException(sqlMessage);
-
-    throw new InternalServerErrorException(
-      `Error not handled yet at PurchaseOrder-Service. Error: ${err}`,
-    );
   }
 }

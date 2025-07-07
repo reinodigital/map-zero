@@ -14,5 +14,7 @@ export enum ActionOverEntity {
   CHANGE_STATUS = 'cambio_estado',
   APPROVED = 'aprobada',
   AWAITING_FOR_APPROVAL = 'esperando_a_ser_aprobada',
+  AWAITING_FOR_PAYMENT = 'esperando_a_ser_pagada',
+  PAID = 'pagada',
   BILLED = 'pagada',
 }

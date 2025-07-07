@@ -10,12 +10,14 @@ import { SharedModule } from '../shared/shared.module';
 import { Invoice } from './entities/invoice.entity';
 import { InvoiceItem } from './entities/invoice-item.entity';
 import { InvoiceController } from './invoice.controller';
+import { InvoiceActionsController } from './invoice-actions.controller';
 import { InvoiceService } from './invoice.service';
 import { InvoiceItemService } from './invoice-item.service';
+import { InvoiceActionsService } from './invoice-actions.service';
 
 @Module({
-  controllers: [InvoiceController],
-  providers: [InvoiceService, InvoiceItemService],
+  controllers: [InvoiceController, InvoiceActionsController],
+  providers: [InvoiceService, InvoiceItemService, InvoiceActionsService],
   imports: [
     TypeOrmModule.forFeature([Invoice, InvoiceItem]),
     AuthModule,

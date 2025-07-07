@@ -6,11 +6,13 @@ import {
 
 import { Quote } from 'src/modules/quote/entities/quote.entity';
 import { PurchaseOrder } from 'src/modules/purchase-order/entities/purchase-order.entity';
+import { Invoice } from 'src/modules/invoice/entities/invoice.entity';
 
 import { PrinterService } from './printer.service';
 
 import { quoteInvoicePDFReport } from '../reports/quote-invoice-pdf.report';
 import { purchaseOrderInvoicePDFReport } from '../reports/purchase-order-invoice-pdf.report';
+import { invoiceInvoicePDFReport } from '../reports/invoice-invoice-pdf.report';
 
 @Injectable()
 export class ReportService {
@@ -20,6 +22,18 @@ export class ReportService {
   async generateQuotePDF(quote: Quote): Promise<PDFKit.PDFDocument> {
     try {
       const docDefinition = quoteInvoicePDFReport(quote);
+      const doc = this.printerService.createPdf(docDefinition);
+
+      return doc;
+    } catch (error) {
+      this.handleExceptionsErrorOnDB(error);
+    }
+  }
+
+  // INVOICE
+  async generateInvoicePDF(invoice: Invoice): Promise<PDFKit.PDFDocument> {
+    try {
+      const docDefinition = invoiceInvoicePDFReport(invoice);
       const doc = this.printerService.createPdf(docDefinition);
 
       return doc;

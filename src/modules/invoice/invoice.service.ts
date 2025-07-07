@@ -19,10 +19,14 @@ import { ReportService } from '../shared/services/report.service';
 import { NodemailerService } from '../shared/services/nodemailer.service';
 import { roundToTwoDecimals } from '../shared/helpers/round-two-decimals.helper';
 
-import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/create-invoice.dto';
+import {
+  CreateInvoiceDto,
+  EmailInvoiceDto,
+  UpdateInvoiceDto,
+} from './dto/create-invoice.dto';
 import { CreateTrackingDto } from '../tracking/dto/create-tracking.dto';
 import { ActionOverEntity, NameEntities, StatusInvoice } from 'src/enums';
-import { ICountAndInvoiceAll, IDetailInvoice } from 'src/interfaces';
+import { ICountAndInvoiceAll, IDetailInvoice, IMessage } from 'src/interfaces';
 import { FindAllInvoicesDto } from './dto/find-all-invoices.dto';
 
 @Injectable()
@@ -51,6 +55,55 @@ export class InvoiceService {
     private readonly reportService: ReportService,
     private readonly nodemailerService: NodemailerService,
   ) {}
+
+  public async sendEmail(
+    invoiceId: number,
+    emailInvoiceDto: EmailInvoiceDto,
+    userName: string,
+  ): Promise<IMessage> {
+    const invoice = await this.invoiceRepository.findOne({
+      where: { id: invoiceId },
+      relations: {
+        client: { addresses: true },
+        invoiceItems: { item: { cabys: true } },
+      },
+    });
+    if (!invoice) {
+      throw new BadRequestException(
+        `Factura con ID: ${invoiceId} no encontrada.`,
+      );
+    }
+
+    if (!emailInvoiceDto.emails || !emailInvoiceDto.emails.length) {
+      throw new BadRequestException(
+        'Se ocupa el menos una bandeja de correo para enviar la factura.',
+      );
+    }
+
+    await this.nodemailerService.sendInvoiceEmail(invoice, emailInvoiceDto);
+
+    // generate tracking
+    const invoiceTrackingDto = this.generateTracking(
+      userName,
+      ActionOverEntity.SENT,
+      emailInvoiceDto.sentAt,
+      `Factura ${invoice.invoiceNumber} enviada por correo electrónico [${emailInvoiceDto.emails.join(', ')}]`,
+      invoice,
+    );
+    await this.trackingService.create(invoiceTrackingDto);
+
+    // verify if status invoice is draft to update it to sent
+    if (invoice.status === StatusInvoice.DRAFT) {
+      await this.invoiceRepository.update(
+        { id: invoice.id },
+        { status: StatusInvoice.SENT },
+      );
+    }
+
+    return {
+      msg: `Factura enviada correctamente por correo electrónico.`,
+    };
+  }
 
   async create(
     createInvoiceDto: CreateInvoiceDto,
@@ -212,7 +265,11 @@ export class InvoiceService {
       throw new NotFoundException(`Factura con ID ${id} no encontrada`);
     }
 
-    const allowedStatusToEditInvoice = [StatusInvoice.DRAFT];
+    const allowedStatusToEditInvoice = [
+      StatusInvoice.DRAFT,
+      StatusInvoice.SENT,
+      StatusInvoice.AWAITING_APPROVAL,
+    ];
     if (
       !allowedStatusToEditInvoice.includes(
         existingInvoice.status as StatusInvoice,
@@ -270,8 +327,22 @@ export class InvoiceService {
     return savedInvoice;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} invoice`;
+  async remove(id: number): Promise<IMessage> {
+    const invoice = await this.invoiceRepository.findOneBy({ id });
+    if (!invoice) {
+      throw new NotFoundException(`Factura con ID: ${id} no encontrada.`);
+    }
+
+    const allowedStatusToBeRemoved = [StatusInvoice.DRAFT, StatusInvoice.SENT];
+    if (!allowedStatusToBeRemoved.includes(invoice.status as StatusInvoice)) {
+      throw new NotFoundException(
+        `Esta factura con estado: ${invoice.status} no puede ser removida. Estados permitidos a ser removidas solo estos: [${allowedStatusToBeRemoved.join(', ')}].`,
+      );
+    }
+
+    await this.invoiceRepository.update({ id }, { isActive: false });
+
+    return { msg: 'Factura removida correctamente.' };
   }
 
   public generateTracking(

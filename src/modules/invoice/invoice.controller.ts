@@ -13,13 +13,27 @@ import {
 import { InvoiceService } from './invoice.service';
 import { AuthDecorator, GetUser } from '../auth/decorators';
 
-import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/create-invoice.dto';
+import {
+  CreateInvoiceDto,
+  EmailInvoiceDto,
+  UpdateInvoiceDto,
+} from './dto/create-invoice.dto';
 import { FindAllInvoicesDto } from './dto/find-all-invoices.dto';
 import { ListDataUser } from 'src/enums';
 
 @Controller('invoice')
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
+
+  @Post('send-email/:invoiceId')
+  @AuthDecorator()
+  async sendEmail(
+    @Param('invoiceId', ParseIntPipe) invoiceId: string,
+    @Body() emailInvoiceDto: EmailInvoiceDto,
+    @GetUser(ListDataUser.name) userName: string,
+  ) {
+    return this.invoiceService.sendEmail(+invoiceId, emailInvoiceDto, userName);
+  }
 
   @Post()
   @AuthDecorator()

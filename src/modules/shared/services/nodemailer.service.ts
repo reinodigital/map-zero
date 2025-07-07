@@ -3,12 +3,14 @@ import * as nodemailer from 'nodemailer';
 
 import { Quote } from 'src/modules/quote/entities/quote.entity';
 import { PurchaseOrder } from 'src/modules/purchase-order/entities/purchase-order.entity';
+import { Invoice } from 'src/modules/invoice/entities/invoice.entity';
 
 import { EmailTemplateService } from './email-template.service';
 import { ReportService } from './report.service';
 
 import { EmailQuoteDto } from 'src/modules/quote/dto/create-quote.dto';
 import { EmailPurchaseOrderDto } from 'src/modules/purchase-order/dto/create-purchase-order.dto';
+import { EmailInvoiceDto } from 'src/modules/invoice/dto/create-invoice.dto';
 
 @Injectable()
 export class NodemailerService {
@@ -133,6 +135,70 @@ export class NodemailerService {
         },
         {
           filename: `Orden_de_compra_${purchaseOrder.purchaseOrderNumber}.pdf`, // PDF File
+          content: pdfFileToBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+  }
+
+  // Invoice
+  async sendInvoiceEmail(
+    invoice: Invoice,
+    dataEmail: EmailInvoiceDto,
+  ): Promise<void> {
+    const transporter = nodemailer.createTransport({
+      // changeMe! to smtp.office365.com
+      service: 'gmail', // Use your email provider
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    // Compile the email template with order data
+    const emailHtml = this.emailTemplateService.compileTemplate(
+      'invoice-email-template',
+      {
+        documentName: 'Factura',
+        clientName: invoice.client.name,
+        invoiceNumber: invoice.invoiceNumber,
+        message: dataEmail.message ?? '',
+      },
+    );
+
+    // Build PDF attachment
+    const doc = await this.reportService.generateInvoicePDF(invoice);
+
+    // converts doc (stream) to a buffer array
+    const pdfFileToBuffer = await new Promise<Buffer>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk)); // Collect chunks
+      doc.on('end', () => resolve(Buffer.concat(chunks))); // Merge chunks into a single Buffer
+      doc.on('error', (err) => reject(err)); // Handle errors
+
+      doc.end(); // Finalize the document
+    });
+
+    // Email options
+    // changeMe!
+    const mailOptions = {
+      from: '"MAP Soluciones" <onier0217@gmail.com>', // changeMe!
+      // to: dataEmail.emails[0], // send only one email
+      bcc: dataEmail.emails.join(', '), // bcc => No one sees others' emails
+      subject: dataEmail.subject ?? 'Factura',
+      html: emailHtml,
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: '/usr/src/app/seed-data/map_logo.png', // Path to the static logo image
+          cid: 'logo', // Same CID as in the template
+        },
+        {
+          filename: `Factura_${invoice.invoiceNumber}.pdf`, // PDF File
           content: pdfFileToBuffer,
           contentType: 'application/pdf',
         },
