@@ -62,7 +62,7 @@ export class PurchaseOrderController {
 
     response.setHeader('Content-Type', 'application/pdf');
 
-    pdfDoc.info.Title = 'Orden de Compra';
+    pdfDoc.info.Title = `Orden-de-Compra-${purchaseOrderId}`;
     pdfDoc.pipe(response);
     pdfDoc.end();
   }

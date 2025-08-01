@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import {
   Controller,
   Get,
@@ -8,6 +9,7 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  Res,
 } from '@nestjs/common';
 
 import { InvoiceService } from './invoice.service';
@@ -42,6 +44,21 @@ export class InvoiceController {
     @GetUser(ListDataUser.name) userName: string,
   ) {
     return this.invoiceService.create(createInvoiceDto, userName);
+  }
+
+  @Get('/download-pdf/:invoiceId')
+  @AuthDecorator()
+  async generatePDF(
+    @Param('invoiceId') invoiceId: string,
+    @Res() response: Response,
+  ) {
+    const pdfDoc = await this.invoiceService.generatePDF(+invoiceId);
+
+    response.setHeader('Content-Type', 'application/pdf');
+
+    pdfDoc.info.Title = `Factura-${invoiceId}`;
+    pdfDoc.pipe(response);
+    pdfDoc.end();
   }
 
   @Get()

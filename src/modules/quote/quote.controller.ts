@@ -90,7 +90,7 @@ export class QuoteController {
 
     response.setHeader('Content-Type', 'application/pdf');
 
-    pdfDoc.info.Title = 'Cotización';
+    pdfDoc.info.Title = `Cotización-${quoteId}`;
     pdfDoc.pipe(response);
     pdfDoc.end();
   }

@@ -105,6 +105,25 @@ export class InvoiceService {
     };
   }
 
+  async generatePDF(invoiceId: number): Promise<PDFKit.PDFDocument> {
+    const invoice = await this.invoiceRepository.findOne({
+      where: { id: invoiceId },
+      relations: {
+        client: { addresses: true },
+        invoiceItems: { item: { cabys: true } },
+      },
+    });
+    if (!invoice) {
+      throw new BadRequestException(
+        `Factura con ID: ${invoiceId} no encontrada.`,
+      );
+    }
+
+    const doc = await this.reportService.generateInvoicePDF(invoice);
+
+    return doc;
+  }
+
   async create(
     createInvoiceDto: CreateInvoiceDto,
     userName: string,
